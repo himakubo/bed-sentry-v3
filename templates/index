@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>KuboCare · Asset Register</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
+<style>
+:root{--bg:#0D0F14;--sf:#13161D;--sf2:#1A1E28;--bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.13);--ac:#4F8EF7;--gn:#2ECC71;--am:#F5A623;--rd:#E74C3C;--pu:#7B61FF;--tx:#F0F2F8;--mu:#6B7280;--mu2:#9CA3AF;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--disp:'Syne',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:14px;height:100vh;overflow:hidden}
+.shell{display:grid;grid-template-columns:200px 1fr;height:100vh}
+.sidebar{background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.main{display:flex;flex-direction:column;overflow:hidden}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.logo-mark{font-family:var(--disp);font-size:17px;font-weight:700;letter-spacing:-.5px}
+.logo-mark span{color:var(--ac)}
+.logo-sub{font-size:10px;color:var(--mu);font-family:var(--mono);letter-spacing:1px;margin-top:2px}
+.nav{padding:8px;flex:1;overflow-y:auto}
+.ns{font-size:9px;font-family:var(--mono);letter-spacing:1.5px;color:var(--mu);padding:8px 8px 4px}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--mu2);margin-bottom:1px;transition:all .1s;border:1px solid transparent;user-select:none}
+.ni:hover{background:var(--sf2);color:var(--tx)}
+.ni.active{background:var(--sf2);color:var(--tx);border-color:var(--bd2)}
+.ndot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.nbadge{margin-left:auto;font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:6px;background:rgba(245,166,35,.2);color:var(--am)}
+.sfooter{padding:10px 12px;border-top:1px solid var(--bd);flex-shrink:0}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--mu);flex-shrink:0}
+.sdot.on{background:var(--gn);animation:gp 2s infinite}
+@keyframes gp{0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.4)}50%{box-shadow:0 0 0 4px rgba(46,204,113,0)}}
+
+/* Panel system */
+.panel{display:none;flex-direction:column;height:100%;overflow:hidden}
+.panel.active{display:flex}
+.panel-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.ph{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:-.5px}
+.ps{font-size:11px;color:var(--mu2);margin-top:2px}
+.panel-body{flex:1;overflow-y:auto;padding:14px 20px}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;padding:10px 20px;border-bottom:1px solid var(--bd);flex-shrink:0;flex-wrap:wrap;background:var(--sf)}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-lbl{font-size:10px;font-family:var(--mono);color:var(--mu);letter-spacing:.5px;white-space:nowrap}
+.filter-inp{background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:5px 9px;color:var(--tx);font-family:var(--sans);font-size:12px;min-width:100px}
+.filter-inp:focus{outline:none;border-color:var(--ac)}
+.filter-inp::placeholder{color:var(--mu)}
+select.filter-inp{cursor:pointer;appearance:auto;padding-right:4px}
+.toolbar-right{margin-left:auto;display:flex;gap:6px;align-items:center}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid var(--bd2);background:transparent;color:var(--tx);font-family:var(--sans);font-size:12px;cursor:pointer;transition:all .1s;white-space:nowrap}
+.btn:hover{background:var(--sf2)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-ac{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn-ac:hover:not(:disabled){background:#3d7de0}
+.btn-gn{background:var(--gn);border-color:var(--gn);color:#0D0F14;font-weight:500}
+.btn-gn:hover:not(:disabled){background:#27ae60}
+.btn-rd{border-color:rgba(231,76,60,.35);color:var(--rd)}
+.btn-rd:hover{background:rgba(231,76,60,.08)}
+.btn-am{border-color:rgba(245,166,35,.35);color:var(--am)}
+.btn-sm{padding:4px 8px;font-size:11px}
+
+/* Data table */
+.dt-wrap{overflow:auto;flex:1}
+.dt{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.dt thead{position:sticky;top:0;z-index:10}
+.dt th{text-align:left;padding:0;background:var(--sf2);border-bottom:1px solid var(--bd);white-space:nowrap}
+.th-inner{display:flex;align-items:center;gap:4px;padding:8px 10px;cursor:pointer;user-select:none;font-family:var(--mono);font-size:10px;letter-spacing:.4px;color:var(--mu)}
+.th-inner:hover{color:var(--tx)}
+.th-inner.sorted{color:var(--ac)}
+.sort-icon{font-size:10px;opacity:.5}
+.dt td{padding:6px 10px;border-bottom:1px solid var(--bd);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dt tr:hover td{background:rgba(255,255,255,.02)}
+.dt tr.selected td{background:rgba(79,142,247,.08)}
+.dt tr.selected:hover td{background:rgba(79,142,247,.12)}
+.cb-cell{width:32px;text-align:center}
+input[type=checkbox]{cursor:pointer;accent-color:var(--ac)}
+
+/* Inline edit */
+.cell-edit{width:100%;background:var(--sf2);border:1px solid var(--ac);border-radius:4px;padding:4px 7px;color:var(--tx);font-family:var(--sans);font-size:12px}
+.cell-edit:focus{outline:none}
+select.cell-edit{cursor:pointer;appearance:auto}
+
+/* Badges */
+.badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:500}
+.bg-gn{background:rgba(46,204,113,.15);color:var(--gn)}
+.bg-am{background:rgba(245,166,35,.15);color:var(--am)}
+.bg-rd{background:rgba(231,76,60,.15);color:var(--rd)}
+.bg-gr{background:rgba(107,114,128,.15);color:var(--mu2)}
+.bg-ac{background:rgba(79,142,247,.15);color:var(--ac)}
+.bg-pu{background:rgba(123,97,255,.15);color:var(--pu)}
+.bg-te{background:rgba(29,158,117,.15);color:#1D9E75}
+
+/* Upload */
+.dz{border:1.5px dashed var(--bd2);border-radius:12px;padding:32px 24px;text-align:center;cursor:pointer;transition:all .18s;background:var(--sf);flex-shrink:0}
+.dz:hover,.dz.drag{border-color:var(--ac);background:rgba(79,142,247,.05)}
+.dz h3{font-size:14px;font-weight:500;margin-bottom:4px;margin-top:8px}
+.dz p{font-size:11px;color:var(--mu);line-height:1.6}
+.fq{display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto;margin-top:8px}
+.fitem{display:flex;align-items:center;gap:7px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:5px 10px}
+.fn{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fsz{font-size:10px;color:var(--mu);font-family:var(--mono)}
+.ftag{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:3px;font-weight:500;min-width:72px;text-align:center}
+.ft-wait{background:rgba(107,114,128,.15);color:var(--mu2)}
+.ft-proc{background:rgba(245,166,35,.15);color:var(--am)}
+.ft-review{background:rgba(79,142,247,.15);color:var(--ac)}
+.ft-done{background:rgba(46,204,113,.15);color:var(--gn)}
+
+/* Review split pane */
+.review-pane{display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow:hidden}
+.review-left{border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.review-right{display:flex;flex-direction:column;overflow:hidden}
+.pane-hdr{padding:10px 14px;border-bottom:1px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.pane-title{font-size:10px;font-family:var(--mono);letter-spacing:1px;color:var(--mu)}
+.viewer-wrap{flex:1;overflow:auto;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:10px}
+.viewer-wrap canvas{border-radius:3px;display:block}
+.vph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;height:100%;color:var(--mu);font-size:12px;font-family:var(--mono)}
+.fields-pane{flex:1;overflow-y:auto;padding:12px 14px}
+.field-row{display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:center;margin-bottom:6px}
+.field-lbl{font-size:11px;color:var(--mu2)}
+.field-inp{background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:5px 9px;color:var(--tx);font-family:var(--sans);font-size:12px;width:100%}
+.field-inp:focus{outline:none;border-color:var(--ac)}
+.field-inp.ok{border-color:rgba(46,204,113,.4)}
+.field-inp.low{border-color:rgba(245,166,35,.5)}
+select.field-inp{cursor:pointer;appearance:auto}
+.iblock{background:var(--sf2);border:1px solid var(--bd);border-radius:6px;padding:10px;margin-bottom:8px}
+.ibh{font-size:10px;font-family:var(--mono);color:var(--mu);margin-bottom:7px;letter-spacing:.5px}
+.conf{font-size:9px;font-family:var(--mono);padding:1px 4px;border-radius:3px;margin-left:3px}
+.ch{background:rgba(46,204,113,.15);color:var(--gn)}
+.cm{background:rgba(245,166,35,.15);color:var(--am)}
+.cl{background:rgba(231,76,60,.15);color:var(--rd)}
+.dup-warn{background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.3);border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--rd);line-height:1.6;display:flex;gap:7px}
+.qcard{background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-radius:6px;padding:9px 11px;margin-bottom:6px;display:flex;gap:7px}
+.qtxt{font-size:11px;color:var(--am);margin-bottom:4px;font-weight:500}
+.approve-bar{padding:10px 14px;border-top:1px solid var(--bd);flex-shrink:0;display:flex;gap:8px;align-items:center;background:var(--sf)}
+
+/* Bulk action bar */
+.bulk-bar{display:none;align-items:center;gap:8px;padding:8px 20px;background:rgba(79,142,247,.08);border-bottom:1px solid rgba(79,142,247,.2);flex-shrink:0;font-size:12px}
+.bulk-bar.show{display:flex}
+
+/* Stats bar */
+.stats-bar{display:flex;gap:16px;padding:8px 20px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--sf);flex-wrap:wrap}
+.stat-item{display:flex;align-items:center;gap:6px;font-size:11px}
+.stat-dot{width:8px;height:8px;border-radius:50%}
+.stat-val{font-family:var(--mono);font-weight:500}
+.stat-lbl{color:var(--mu2)}
+
+/* Progress */
+.pbar{height:2px;background:var(--sf2);border-radius:2px;overflow:hidden;margin:4px 0}
+.pbar-fill{height:100%;background:var(--ac);border-radius:2px;transition:width .25s}
+.log-box{font-size:10px;font-family:var(--mono);max-height:80px;overflow-y:auto;background:var(--sf2);border-radius:5px;padding:6px 8px;margin-top:6px;display:none}
+
+/* Modal */
+.mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+.mov.open{display:flex}
+.modal{background:var(--sf);border:1px solid var(--bd2);border-radius:12px;padding:20px;width:460px;max-width:96vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-family:var(--disp);font-size:15px;margin-bottom:12px}
+.mi{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:6px 10px;color:var(--tx);font-family:var(--sans);font-size:13px;margin-bottom:7px}
+.mi:focus{outline:none;border-color:var(--ac)}
+select.mi{cursor:pointer;appearance:auto}
+.mlbl{font-size:10px;color:var(--mu2);margin-bottom:2px;font-family:var(--mono);letter-spacing:.5px}
+.mrow{display:flex;gap:7px;margin-top:6px}
+.mid-preview{background:var(--sf2);border:1px solid var(--bd);border-radius:6px;padding:9px 12px;margin-bottom:11px}
+.mid-val{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--ac);margin-top:3px;min-height:20px}
+
+/* Setup */
+.sc{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.sct{font-size:13px;font-weight:500;margin-bottom:10px;font-family:var(--disp)}
+.srow{display:flex;gap:8px;align-items:flex-start;margin-bottom:9px}
+.snum{width:18px;height:18px;border-radius:50%;background:var(--ac);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono)}
+.sbody{font-size:12px;color:var(--mu2);line-height:1.6;flex:1}
+.sbody strong{color:var(--tx)}
+.code-block{background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:11px;font-family:var(--mono);font-size:10px;color:var(--mu2);line-height:1.7;white-space:pre-wrap;position:relative;max-height:220px;overflow-y:auto;margin-top:6px}
+.cbtn{position:absolute;top:7px;right:7px;background:var(--sf);border:1px solid var(--bd2);color:var(--mu2);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:var(--mono)}
+.cfg-row{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;margin-bottom:7px}
+.cfg-lbl{font-size:11px;color:var(--mu2)}
+.cfg-inp{background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:6px 9px;color:var(--tx);font-family:var(--mono);font-size:11px;width:100%}
+.cfg-inp:focus{outline:none;border-color:var(--ac)}
+
+/* Toast */
+.toast{position:fixed;bottom:16px;right:16px;background:var(--sf);border:1px solid var(--bd2);border-radius:8px;padding:9px 14px;font-size:12px;z-index:999;display:flex;align-items:center;gap:7px;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.success{border-color:rgba(46,204,113,.4)}
+.toast.error{border-color:rgba(231,76,60,.4)}
+.toast.warn{border-color:rgba(245,166,35,.4)}
+
+/* Loading */
+.overlay{position:fixed;inset:0;background:rgba(13,15,20,.85);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.overlay.show{display:flex}
+.spinner{width:28px;height:28px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.overlay-msg{font-size:12px;color:var(--mu2);font-family:var(--mono)}
+
+/* Vtb */
+.vtb{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--sf2);border-bottom:1px solid var(--bd);flex-shrink:0;flex-shrink:0}
+.vtb span{font-size:10px;color:var(--mu);font-family:var(--mono)}
+.tbtn{background:none;border:1px solid var(--bd2);color:var(--mu2);border-radius:3px;padding:2px 7px;font-size:11px;cursor:pointer}
+.tbtn:hover{color:var(--tx)}
+/* PDF text layer — makes text selectable on canvas */
+.pdf-wrap{position:relative;display:inline-block}
+.textLayer{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;line-height:1;pointer-events:auto}
+.textLayer span{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%;user-select:text;-webkit-user-select:text}
+.textLayer ::selection{background:rgba(79,142,247,.35)}
+
+.row-count{font-size:11px;color:var(--mu);font-family:var(--mono);padding:6px 20px;border-top:1px solid var(--bd);flex-shrink:0}
+.combo-wrap{position:relative;width:100%}
+.combo-inp{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:5px 28px 5px 9px;color:var(--tx);font-family:var(--sans);font-size:12px}
+.combo-inp:focus{outline:none;border-color:var(--ac)}
+.combo-inp.ok{border-color:rgba(46,204,113,.4)}
+.combo-inp.low{border-color:rgba(245,166,35,.5)}
+.combo-arrow{position:absolute;right:7px;top:50%;transform:translateY(-50%);color:var(--mu);font-size:10px;pointer-events:none}
+.combo-drop{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--sf);border:1px solid var(--bd2);border-radius:6px;z-index:100;max-height:160px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.combo-drop.open{display:block}
+.combo-opt{padding:6px 10px;font-size:12px;cursor:pointer;color:var(--tx)}
+.combo-opt:hover,.combo-opt.sel{background:rgba(79,142,247,.12);color:var(--ac)}
+.dup-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.dup-col{background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:10px 12px}
+.dup-col-hdr{font-size:9px;font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+.dup-col-hdr.old{color:var(--rd)}
+.dup-col-hdr.new{color:var(--gn)}
+.dup-field{display:grid;grid-template-columns:70px 1fr;gap:4px;margin-bottom:5px;font-size:11px}
+.dup-lbl{color:var(--mu2)}
+.dup-val{color:var(--tx);word-break:break-all}
+.dup-val.diff{color:var(--am);font-weight:500}
+.cat-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;max-height:200px;overflow-y:auto}
+.cat-row{display:flex;align-items:center;gap:8px;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:6px 10px}
+.cat-code{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ac);width:48px;flex-shrink:0}
+.cat-name{flex:1;font-size:12px}
+.cat-add{display:grid;grid-template-columns:80px 1fr auto;gap:7px;align-items:center;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- Overlay -->
+<div class="overlay" id="ov"><div class="spinner"></div><div class="overlay-msg" id="ov-msg">Loading...</div></div>
+
+<!-- Duplicate comparison modal -->
+<div class="mov" id="mod-dup">
+<div class="modal" style="width:540px">
+  <h3 style="color:var(--am)">⚠ Duplicate invoice detected</h3>
+  <p style="font-size:12px;color:var(--mu2);margin-bottom:10px">This invoice number already exists in your Sheet. Compare below — if it's genuinely new, you can still approve.</p>
+  <div class="dup-modal-grid">
+    <div class="dup-col">
+      <div class="dup-col-hdr old">EXISTING IN SHEETS</div>
+      <div id="dup-old-content"></div>
+    </div>
+    <div class="dup-col">
+      <div class="dup-col-hdr new">THIS BILL (NEW)</div>
+      <div id="dup-new-content"></div>
+    </div>
+  </div>
+  <div class="mrow">
+    <button class="btn btn-rd" onclick="closeMod('mod-dup');doApprove(true)">Force approve anyway</button>
+    <button class="btn" onclick="doSkip();closeMod('mod-dup')">Skip this bill</button>
+    <button class="btn" onclick="closeMod('mod-dup')">Go back &amp; edit</button>
+  </div>
+</div>
+</div>
+
+<!-- Category manager modal -->
+<div class="mov" id="mod-cats">
+<div class="modal" style="width:440px">
+  <h3>Manage categories</h3>
+  <div class="cat-list" id="cat-list"></div>
+  <div style="font-size:10px;font-family:var(--mono);color:var(--mu);margin-bottom:6px;letter-spacing:.5px">ADD NEW CATEGORY</div>
+  <div class="cat-add">
+    <input class="mi" id="new-cat-code" placeholder="Code (e.g. SRV)" style="margin:0;font-family:var(--mono);font-size:12px;text-transform:uppercase" maxlength="6">
+    <input class="mi" id="new-cat-name" placeholder="Full name (e.g. Server)" style="margin:0;font-size:12px">
+    <button class="btn btn-gn" style="padding:6px 10px;font-size:12px" onclick="addCategory()">Add</button>
+  </div>
+  <div style="font-size:10px;color:var(--mu);margin-top:8px;line-height:1.6">Categories are saved in your browser. They persist across sessions. The code is used for asset IDs (e.g. SRV-001).</div>
+  <div class="mrow" style="margin-top:12px">
+    <button class="btn" onclick="closeMod('mod-cats')">Done</button>
+  </div>
+</div>
+</div>
+
+<!-- Assemble modal -->
+<!-- SKU Code Manager modal -->
+<div class="mov" id="mod-sku">
+<div class="modal" style="width:560px">
+  <h3>SKU Code Manager</h3>
+  <p style="font-size:12px;color:var(--mu2);margin-bottom:14px">Define codes for each component slot. These build your device SKU automatically — e.g. J + G2 + E1 + T200 = <strong style="color:var(--ac);font-family:var(--mono)">JG2E1T200</strong></p>
+  <div id="sku-slots-wrap"></div>
+  <div class="mrow" style="margin-top:12px">
+    <button class="btn btn-gn" onclick="saveSKUCodes();closeMod('mod-sku')">Save codes</button>
+    <button class="btn" onclick="closeMod('mod-sku')">Cancel</button>
+  </div>
+</div>
+</div>
+
+<!-- Assemble modal — SKU based -->
+<div class="mov" id="mod-asm">
+<div class="modal" style="width:520px;max-height:92vh">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <h3 style="margin:0">Assemble device</h3>
+    <button class="btn btn-sm btn-am" onclick="openMod('mod-sku');renderSKUManager()">⚙ Manage SKU codes</button>
+  </div>
+
+  <!-- SKU preview -->
+  <div class="mid-preview" style="margin-bottom:14px">
+    <div style="font-size:9px;font-family:var(--mono);letter-spacing:1px;color:var(--mu);margin-bottom:4px">DEVICE SKU — AUTO BUILT FROM YOUR SELECTIONS</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap" id="sku-preview-parts"></div>
+    <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--ac);margin-top:8px;letter-spacing:1px" id="m-id-prev">— select components below —</div>
+  </div>
+
+  <!-- Dynamic slot selectors — built from SKU_SLOTS -->
+  <div id="asm-slot-selectors"></div>
+
+  <div style="height:1px;background:var(--bd);margin:10px 0"></div>
+  <div class="mlbl">Quantity to assemble</div>
+  <input class="mi" id="m-qty" type="number" value="1" min="1" max="500" placeholder="1">
+  <div class="mlbl">Hostname</div>
+  <input class="mi" id="m-host" placeholder="kc2505p007 (leave blank if multiple)">
+  <div class="mlbl">Location / site</div>
+  <input class="mi" id="m-loc" placeholder="US — Care Home A">
+  <div class="mlbl">Status</div>
+  <select class="mi" id="m-status">
+    <option value="Inventory">Inventory — assembled, not deployed</option>
+    <option value="In field">In field — live at care home</option>
+    <option value="Research">Research — lab use</option>
+  </select>
+  <div class="mlbl">Notes</div>
+  <input class="mi" id="m-notes">
+  <div class="mrow">
+    <button class="btn btn-gn" onclick="saveDevice()">Create device(s)</button>
+    <button class="btn" onclick="closeMod('mod-asm')">Cancel</button>
+  </div>
+</div>
+</div>
+
+<div class="shell">
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Kubo<span>Care</span></div>
+    <div class="logo-sub">ASSET REGISTER</div>
+  </div>
+  <nav class="nav">
+    <div class="ns">PROCUREMENT</div>
+    <div class="ni active" onclick="goTo('upload',this)"><span class="ndot" style="background:var(--ac)"></span>Upload Bills</div>
+    <div class="ni" onclick="goTo('review',this)" id="nav-review"><span class="ndot" style="background:var(--am)"></span>Review &amp; Verify<span class="nbadge" id="rc" style="display:none">0</span></div>
+    <div class="ns">REGISTERS</div>
+    <div class="ni" onclick="goTo('invoices',this)"><span class="ndot" style="background:var(--pu)"></span>Invoice Log</div>
+    <div class="ni" onclick="goTo('components',this)"><span class="ndot" style="background:var(--gn)"></span>Components</div>
+    <div class="ni" onclick="goTo('products',this)"><span class="ndot" style="background:var(--ac)"></span>Devices</div>
+    <div class="ns">SETTINGS</div>
+    <div class="ni" onclick="goTo('misc',this)"><span class="ndot" style="background:var(--pu)"></span>Misc Items</div>
+    <div class="ni" onclick="goTo('sku',this)"><span class="ndot" style="background:var(--am)"></span>SKU Code Manager</div>
+    <div class="ni" onclick="goTo('correct',this)"><span class="ndot" style="background:var(--rd)"></span>Bulk Correct</div>
+    <div class="ni" onclick="goTo('setup',this)"><span class="ndot" style="background:var(--mu)"></span>Sheets Setup</div>
+  </nav>
+  <div class="sfooter">
+    <div style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--mu);font-family:var(--mono);margin-bottom:5px">
+      <span class="sdot" id="sdot"></span><span id="slbl">Not connected</span>
+      <button class="btn btn-sm" style="margin-left:auto;padding:2px 7px;font-size:10px" onclick="loadAll()" title="Reload from Sheets">↻</button>
+    </div>
+    <div style="font-size:9px;color:var(--mu);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:7px" id="sshort"></div>
+    <button class="btn btn-rd btn-sm" style="width:100%;justify-content:center;font-size:11px" onclick="clearAll()">Reset &amp; clear all data</button>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- ═══ UPLOAD ═══ -->
+<div class="panel active" id="panel-upload">
+  <div class="panel-hdr">
+    <div class="ph">Upload Bills</div>
+    <div class="ps">Drop invoices — AI extracts details — you verify — saves to Sheets</div>
+  </div>
+  <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
+    <div class="stats-bar" style="margin:-14px -20px 0;padding:8px 20px">
+      <div class="stat-item"><span class="stat-dot" style="background:var(--ac)"></span><span class="stat-val" id="sq">0</span><span class="stat-lbl">queued</span></div>
+      <div class="stat-item"><span class="stat-dot" style="background:var(--am)"></span><span class="stat-val" id="sp">0</span><span class="stat-lbl">processing</span></div>
+      <div class="stat-item"><span class="stat-dot" style="background:var(--ac)"></span><span class="stat-val" id="sr">0</span><span class="stat-lbl">pending review</span></div>
+      <div class="stat-item"><span class="stat-dot" style="background:var(--gn)"></span><span class="stat-val" id="sdn">0</span><span class="stat-lbl">synced today</span></div>
+    </div>
+    <div class="dz" id="dz" onclick="document.getElementById('fi').click()" ondragover="doDrag(event,'over')" ondragleave="doDrag(event,'leave')" ondrop="doDrag(event,'drop')">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" style="opacity:.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      <h3>Click or drag bills here</h3>
+      <p>PDF · JPG · JPEG · PNG · Multiple files or entire folder · 5 processed in parallel</p>
+    </div>
+    <input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.webp" style="display:none" onchange="onSel(event)">
+    <input type="file" id="fi2" multiple webkitdirectory style="display:none" onchange="onSel(event)">
+    <div class="btn" style="align-self:flex-start;padding:5px 10px;font-size:11px;cursor:pointer" onclick="document.getElementById('fi2').click()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg> Select folder
+    </div>
+    <div class="fq" id="fq"></div>
+    <div id="erow" style="display:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-ac" id="ebtn" onclick="startExtract()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Extract all with AI
+      </button>
+      <button class="btn btn-rd btn-sm" id="stopbtn" onclick="_stop=true;this.style.display='none'" style="display:none">Stop</button>
+      <span style="font-size:11px;color:var(--mu);font-family:var(--mono)" id="estat"></span>
+    </div>
+    <div id="erow" style="display:none"><!-- placeholder --></div>
+    <div class="pbar" id="pb" style="display:none"><div class="pbar-fill" id="pbf" style="width:0%"></div></div>
+    <div class="log-box" id="logbox"></div>
+  </div>
+</div>
+
+<!-- ═══ REVIEW ═══ -->
+<div class="panel" id="panel-review">
+  <div class="panel-hdr" style="display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap">
+    <div>
+      <div class="ph" style="font-size:16px">Review &amp; Verify</div>
+      <div class="ps">Bill <strong id="ri">1</strong> of <strong id="rt">1</strong> &nbsp;·&nbsp; <span id="rfn" style="font-family:var(--mono);font-size:10px;color:var(--mu)"></span></div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-sm btn-am" onclick="sortBillsByDate()" title="Sort oldest invoice first so asset IDs match purchase dates">↑ Sort by date</button>
+      <button class="btn btn-sm" id="rprev" onclick="navR(-1)">← Prev</button>
+      <button class="btn btn-sm" id="rnext" onclick="navR(1)">Next →</button>
+    </div>
+  </div>
+  <div id="rempty" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--mu)">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" style="opacity:.2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    <div style="font-size:13px;font-weight:500;color:var(--mu2)">No bills pending</div>
+    <div style="font-size:11px">Upload and extract bills first</div>
+  </div>
+  <div class="review-pane" id="rmain" style="display:none">
+    <div class="review-left">
+      <div class="vtb" id="vtb" style="display:none">
+          <button class="tbtn" onclick="prevPg()">‹ Prev</button>
+          <span id="pginfo">Page 1 of 1</span>
+          <button class="tbtn" onclick="nextPg()">Next ›</button>
+          <button class="tbtn" onclick="zIn()">＋</button>
+          <button class="tbtn" onclick="zOut()">－</button>
+          <span id="zinfo">130%</span>
+          <span style="margin-left:6px;color:var(--gn)">● Text selectable — click &amp; drag to copy</span>
+        </div>
+      <div class="viewer-wrap" id="vcw" style="padding:0;align-items:stretch">
+        <div class="vph" id="vph">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" style="opacity:.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div style="font-size:11px;font-family:var(--mono)" id="vfn"></div>
+        </div>
+        
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid var(--bd)" id="aiq"></div>
+    </div>
+    <div class="review-right">
+      <div class="pane-hdr">
+        <span class="pane-title">EXTRACTED DATA — EDIT ANYTHING BEFORE APPROVING</span>
+      </div>
+      <div class="fields-pane" id="fed"></div>
+      <div class="approve-bar">
+        <button class="btn btn-gn" id="appbtn" onclick="doApprove()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Approve &amp; save to Sheets
+        </button>
+        <button class="btn btn-rd btn-sm" onclick="doSkip()">Skip</button>
+        <span id="amsg" style="font-size:11px;color:var(--mu);font-family:var(--mono);margin-left:4px"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ INVOICE LOG ═══ -->
+<div class="panel" id="panel-invoices">
+  <div class="panel-hdr"><div class="ph">Invoice Log</div><div class="ps">All purchase invoices — click any cell to edit inline — changes save to Sheets immediately</div></div>
+  <div class="toolbar">
+    <div class="filter-group"><span class="filter-lbl">SEARCH</span><input class="filter-inp" id="inv-search" placeholder="Invoice, vendor, item..." oninput="renderInv()" style="width:160px"></div>
+    <div class="filter-group"><span class="filter-lbl">CAT</span>
+      <select class="filter-inp" id="inv-cat" onchange="renderInv()"><option value="">All</option><option>PC</option><option>RDR</option><option>SW</option><option>NET</option><option>PSU</option><option>CBL</option><option>MSC</option></select></div>
+    <div class="filter-group"><span class="filter-lbl">VENDOR</span>
+      <select class="filter-inp" id="inv-vendor" onchange="renderInv()"><option value="">All</option></select></div>
+    <div class="toolbar-right">
+      <button class="btn btn-sm" onclick="loadAll()">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="bulk-bar" id="inv-bulk">
+    <span id="inv-sel-count">0 selected</span>
+    <button class="btn btn-rd btn-sm" onclick="bulkDelete('inv')">Delete selected</button>
+    <button class="btn btn-sm" onclick="clearSel('inv')">Cancel</button>
+  </div>
+  <div class="dt-wrap"><table class="dt" id="inv-table">
+    <thead><tr>
+      <th class="cb-cell"><input type="checkbox" id="inv-all-cb" onchange="selAll('inv',this.checked)"></th>
+      <th style="width:36px"><div class="th-inner">#</div></th>
+      <th style="width:140px"><div class="th-inner sortable" data-col="1" onclick="sortTable('inv',1)">INVOICE NO. <span class="sort-icon">⇅</span></div></th>
+      <th style="width:100px"><div class="th-inner sortable" data-col="2" onclick="sortTable('inv',2)">DATE <span class="sort-icon">⇅</span></div></th>
+      <th style="width:140px"><div class="th-inner sortable" data-col="3" onclick="sortTable('inv',3)">VENDOR <span class="sort-icon">⇅</span></div></th>
+      <th style="width:200px"><div class="th-inner">ITEM DESCRIPTION</div></th>
+      <th style="width:64px"><div class="th-inner">CAT</div></th>
+      <th style="width:50px"><div class="th-inner sortable" data-col="6" onclick="sortTable('inv',6)">QTY <span class="sort-icon">⇅</span></div></th>
+      <th style="width:90px"><div class="th-inner sortable" data-col="7" onclick="sortTable('inv',7)">UNIT PRICE <span class="sort-icon">⇅</span></div></th>
+      <th style="width:90px"><div class="th-inner sortable" data-col="8" onclick="sortTable('inv',8)">TOTAL <span class="sort-icon">⇅</span></div></th>
+      <th style="width:54px"><div class="th-inner">CURR</div></th>
+      <th style="width:160px"><div class="th-inner">ASSET ID RANGE</div></th>
+      <th style="width:36px"></th>
+    </tr></thead>
+    <tbody id="inv-tbody"></tbody>
+  </table></div>
+  <div class="row-count" id="inv-count"></div>
+</div>
+
+<!-- ═══ COMPONENTS ═══ -->
+<div class="panel" id="panel-components">
+  <div class="panel-hdr"><div class="ph">Component Register</div><div class="ps">Every individual unit — click any cell to edit · status changes sync instantly</div></div>
+  <div class="toolbar">
+    <div class="filter-group"><span class="filter-lbl">SEARCH</span><input class="filter-inp" id="c-search" placeholder="ID, name, vendor, invoice..." oninput="renderComps()" style="width:160px"></div>
+    <div class="filter-group"><span class="filter-lbl">CAT</span>
+      <select class="filter-inp" id="c-cat" onchange="renderComps()"><option value="">All</option><option>PC</option><option>RDR</option><option>SW</option><option>NET</option><option>PSU</option><option>CBL</option><option>MSC</option></select></div>
+    <div class="filter-group"><span class="filter-lbl">STATUS</span>
+      <select class="filter-inp" id="c-sta" onchange="renderComps()"><option value="">All</option><option>Inventory</option><option>In field</option><option>Research</option><option>Dismantled</option></select></div>
+    <div class="filter-group"><span class="filter-lbl">VENDOR</span>
+      <select class="filter-inp" id="c-vendor" onchange="renderComps()"><option value="">All</option></select></div>
+    <div class="filter-group"><span class="filter-lbl">DEVICE</span>
+      <input class="filter-inp" id="c-device" placeholder="KC-P..." oninput="renderComps()" style="width:90px"></div>
+    <div class="toolbar-right">
+      <span style="font-size:11px;color:var(--mu);font-family:var(--mono)" id="c-stats"></span>
+      <button class="btn btn-sm" onclick="openMod('mod-cats');renderCatList()">+ Categories</button>
+      <button class="btn btn-sm" onclick="loadAll()">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="stats-bar" id="comp-stats-bar">
+    <div class="stat-item"><span class="stat-dot" style="background:var(--pu)"></span><span class="stat-val" id="ct">0</span><span class="stat-lbl">total</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--gn)"></span><span class="stat-val" id="cf">0</span><span class="stat-lbl">in field</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--am)"></span><span class="stat-val" id="cr">0</span><span class="stat-lbl">research</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--ac)"></span><span class="stat-val" id="ci">0</span><span class="stat-lbl">inventory</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--rd)"></span><span class="stat-val" id="cd">0</span><span class="stat-lbl">dismantled</span></div>
+  </div>
+  <div class="bulk-bar" id="comp-bulk">
+    <span id="comp-sel-count">0 selected</span>
+    <select class="filter-inp" id="bulk-status" style="font-size:11px;padding:3px 6px"><option value="">Change status to...</option><option>Inventory</option><option>In field</option><option>Research</option><option>Dismantled</option></select>
+    <button class="btn btn-am btn-sm" onclick="bulkStatus()">Apply to selected</button>
+    <button class="btn btn-rd btn-sm" onclick="bulkDelete('comp')">Delete selected</button>
+    <button class="btn btn-sm" onclick="clearSel('comp')">Cancel</button>
+  </div>
+  <div class="dt-wrap"><table class="dt" id="comp-table">
+    <thead><tr>
+      <th class="cb-cell"><input type="checkbox" id="comp-all-cb" onchange="selAll('comp',this.checked)"></th>
+      <th style="width:90px"><div class="th-inner sortable" onclick="sortTable('comp',0)">ASSET ID <span class="sort-icon">⇅</span></div></th>
+      <th style="width:56px"><div class="th-inner">CAT</div></th>
+      <th style="width:180px"><div class="th-inner sortable" onclick="sortTable('comp',2)">ITEM NAME <span class="sort-icon">⇅</span></div></th>
+      <th style="width:130px"><div class="th-inner sortable" onclick="sortTable('comp',3)">VENDOR <span class="sort-icon">⇅</span></div></th>
+      <th style="width:120px"><div class="th-inner sortable" onclick="sortTable('comp',4)">INVOICE <span class="sort-icon">⇅</span></div></th>
+      <th style="width:90px"><div class="th-inner sortable" onclick="sortTable('comp',5)">DATE <span class="sort-icon">⇅</span></div></th>
+      <th style="width:80px"><div class="th-inner sortable" onclick="sortTable('comp',6)">PRICE <span class="sort-icon">⇅</span></div></th>
+      <th style="width:44px"><div class="th-inner">CURR</div></th>
+      <th style="width:110px"><div class="th-inner sortable" onclick="sortTable('comp',8)">STATUS <span class="sort-icon">⇅</span></div></th>
+      <th style="width:120px"><div class="th-inner sortable" onclick="sortTable('comp',9)">DEVICE <span class="sort-icon">⇅</span></div></th>
+      <th style="width:120px"><div class="th-inner">NOTES</div></th>
+      <th style="width:36px"></th>
+    </tr></thead>
+    <tbody id="comp-tbody"></tbody>
+  </table></div>
+  <div class="row-count" id="comp-count"></div>
+</div>
+
+<!-- ═══ DEVICES ═══ -->
+<div class="panel" id="panel-products">
+  <div class="panel-hdr"><div class="ph">Devices</div><div class="ps">Assembled KuboCare devices — ID encodes components · status syncs to Sheets</div></div>
+  <div class="toolbar">
+    <div class="filter-group"><span class="filter-lbl">SEARCH</span><input class="filter-inp" id="p-search" placeholder="ID, hostname, location..." oninput="renderProds()" style="width:160px"></div>
+    <div class="filter-group"><span class="filter-lbl">STATUS</span>
+      <select class="filter-inp" id="p-sta" onchange="renderProds()"><option value="">All</option><option>Inventory</option><option>In field</option><option>Research</option><option>Dismantled</option></select></div>
+    <div class="toolbar-right">
+      <button class="btn btn-ac btn-sm" onclick="openAsm()">+ Assemble device</button>
+      <button class="btn btn-sm" onclick="loadAll()">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-item"><span class="stat-dot" style="background:var(--gn)"></span><span class="stat-val" id="pf">0</span><span class="stat-lbl">in field</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--am)"></span><span class="stat-val" id="pr">0</span><span class="stat-lbl">research</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--ac)"></span><span class="stat-val" id="pi">0</span><span class="stat-lbl">inventory</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--rd)"></span><span class="stat-val" id="pd">0</span><span class="stat-lbl">dismantled</span></div>
+  </div>
+  <div class="dt-wrap"><table class="dt" id="prod-table">
+    <thead><tr>
+      <th style="width:160px"><div class="th-inner sortable" onclick="sortTable('prod',0)">DEVICE ID <span class="sort-icon">⇅</span></div></th>
+      <th style="width:110px"><div class="th-inner sortable" onclick="sortTable('prod',1)">HOSTNAME <span class="sort-icon">⇅</span></div></th>
+      <th style="width:110px"><div class="th-inner sortable" onclick="sortTable('prod',2)">STATUS <span class="sort-icon">⇅</span></div></th>
+      <th style="width:180px"><div class="th-inner sortable" onclick="sortTable('prod',3)">LOCATION <span class="sort-icon">⇅</span></div></th>
+      <th style="width:90px"><div class="th-inner">ASSEMBLED</div></th>
+      <th style="width:90px"><div class="th-inner">DEPLOYED</div></th>
+      <th style="width:80px"><div class="th-inner">PC</div></th>
+      <th style="width:80px"><div class="th-inner">RADAR</div></th>
+      <th style="width:70px"><div class="th-inner">WIFI</div></th>
+      <th style="width:70px"><div class="th-inner">PSU</div></th>
+      <th style="width:120px"><div class="th-inner">NOTES</div></th>
+      <th style="width:70px"><div class="th-inner">ACTIONS</div></th>
+    </tr></thead>
+    <tbody id="prod-tbody"></tbody>
+  </table></div>
+  <div class="row-count" id="prod-count"></div>
+</div>
+
+<!-- ═══ MISC ITEMS ═══ -->
+<div class="panel" id="panel-misc">
+  <div class="panel-hdr">
+    <div class="ph">Miscellaneous Items</div>
+    <div class="ps">SD cards, cables, tools, packaging, consumables — separate from core component register</div>
+  </div>
+  <div class="toolbar">
+    <div class="filter-group"><span class="filter-lbl">SEARCH</span>
+      <input class="filter-inp" id="misc-search" placeholder="Name, category, vendor..." oninput="renderMisc()" style="width:160px"></div>
+    <div class="filter-group"><span class="filter-lbl">CATEGORY</span>
+      <select class="filter-inp" id="misc-cat" onchange="renderMisc()">
+        <option value="">All</option>
+        <option>SD Card</option><option>Cable</option><option>Tool</option>
+        <option>Packaging</option><option>Adapter</option><option>Battery</option>
+        <option>Spare Part</option><option>Consumable</option><option>Other</option>
+      </select></div>
+    <div class="filter-group"><span class="filter-lbl">STATUS</span>
+      <select class="filter-inp" id="misc-status" onchange="renderMisc()">
+        <option value="">All</option>
+        <option>In stock</option><option>In use</option><option>Depleted</option><option>Damaged</option>
+      </select></div>
+    <div class="toolbar-right">
+      <button class="btn btn-ac btn-sm" onclick="openAddMisc()">+ Add item</button>
+      <button class="btn btn-sm" onclick="loadAll()">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-item"><span class="stat-dot" style="background:var(--pu)"></span><span class="stat-val" id="misc-total">0</span><span class="stat-lbl">total items</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--gn)"></span><span class="stat-val" id="misc-instock">0</span><span class="stat-lbl">in stock</span></div>
+    <div class="stat-item"><span class="stat-dot" style="background:var(--am)"></span><span class="stat-val" id="misc-inuse">0</span><span class="stat-lbl">in use</span></div>
+  </div>
+  <div class="dt-wrap"><table class="dt" id="misc-table">
+    <thead><tr>
+      <th style="width:90px"><div class="th-inner sortable" onclick="sortTable('misc',0)">ITEM ID <span class="sort-icon">⇅</span></div></th>
+      <th style="width:180px"><div class="th-inner">ITEM NAME</div></th>
+      <th style="width:110px"><div class="th-inner sortable" onclick="sortTable('misc',2)">CATEGORY <span class="sort-icon">⇅</span></div></th>
+      <th style="width:110px"><div class="th-inner">SUB-TYPE</div></th>
+      <th style="width:130px"><div class="th-inner sortable" onclick="sortTable('misc',4)">VENDOR <span class="sort-icon">⇅</span></div></th>
+      <th style="width:120px"><div class="th-inner">INVOICE / REF</div></th>
+      <th style="width:90px"><div class="th-inner sortable" onclick="sortTable('misc',6)">DATE <span class="sort-icon">⇅</span></div></th>
+      <th style="width:50px"><div class="th-inner" style="justify-content:center">QTY</div></th>
+      <th style="width:90px"><div class="th-inner" style="justify-content:center">PRICE</div></th>
+      <th style="width:50px"><div class="th-inner">CURR</div></th>
+      <th style="width:100px"><div class="th-inner">STATUS</div></th>
+      <th style="width:120px"><div class="th-inner">LINKED DEVICE</div></th>
+      <th style="width:120px"><div class="th-inner">NOTES</div></th>
+      <th style="width:36px"></th>
+    </tr></thead>
+    <tbody id="misc-tbody"></tbody>
+  </table></div>
+  <div class="row-count" id="misc-count"></div>
+</div>
+
+<!-- Add misc item modal -->
+<div class="mov" id="mod-misc">
+<div class="modal" style="width:500px">
+  <h3>Add miscellaneous item</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div><div class="mlbl">Item name *</div><input class="mi" id="misc-name" placeholder="e.g. SanDisk 32GB SD Card"></div>
+    <div><div class="mlbl">Category</div>
+      <select class="mi" id="misc-catsel">
+        <option>SD Card</option><option>Cable</option><option>Tool</option>
+        <option>Packaging</option><option>Adapter</option><option>Battery</option>
+        <option>Spare Part</option><option>Consumable</option><option>Other</option>
+      </select></div>
+    <div><div class="mlbl">Sub-type / model</div><input class="mi" id="misc-subtype" placeholder="e.g. Class 10, 32GB"></div>
+    <div><div class="mlbl">Vendor</div><input class="mi" id="misc-vendor" placeholder="e.g. Amazon"></div>
+    <div><div class="mlbl">Invoice / Reference</div><input class="mi" id="misc-inv" placeholder="Invoice number or order ID"></div>
+    <div><div class="mlbl">Date received</div><input class="mi" type="date" id="misc-date"></div>
+    <div><div class="mlbl">Quantity</div><input class="mi" type="number" id="misc-qty" value="1" min="1"></div>
+    <div><div class="mlbl">Unit price</div><input class="mi" type="number" id="misc-price" value="0" step="0.01"></div>
+    <div><div class="mlbl">Currency</div>
+      <select class="mi" id="misc-curr"><option>INR</option><option>USD</option></select></div>
+    <div><div class="mlbl">Status</div>
+      <select class="mi" id="misc-statussel">
+        <option>In stock</option><option>In use</option><option>Depleted</option><option>Damaged</option>
+      </select></div>
+    <div><div class="mlbl">Linked device (optional)</div><input class="mi" id="misc-device" placeholder="e.g. JG2E1T200"></div>
+    <div><div class="mlbl">Location</div><input class="mi" id="misc-loc" placeholder="e.g. KuboCare Lab"></div>
+  </div>
+  <div class="mlbl" style="margin-top:4px">Notes</div>
+  <input class="mi" id="misc-notes" placeholder="Optional notes">
+  <div class="mrow">
+    <button class="btn btn-gn" onclick="saveMiscItem()">Add to Sheet</button>
+    <button class="btn" onclick="closeMod('mod-misc')">Cancel</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SKU CODE MANAGER ═══ -->
+<div class="panel" id="panel-sku">
+  <div class="panel-hdr">
+    <div class="ph">SKU Code Manager</div>
+    <div class="ps">Define variant codes for each component slot — these build your device SKU automatically e.g. J + G2 + E1 + T200 = <span style="font-family:var(--mono);color:var(--ac)">JG2E1T200</span></div>
+  </div>
+  <div class="panel-body">
+
+    <!-- How it works -->
+    <div style="background:rgba(79,142,247,.07);border:1px solid rgba(79,142,247,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--mu2);line-height:1.8">
+      <strong style="color:var(--tx)">How SKU codes work:</strong><br>
+      Each <strong style="color:var(--tx)">slot</strong> = one component type (Radar, PC, WiFi...).
+      Each slot has <strong style="color:var(--tx)">options</strong> = one code per variant (J for Joybien, M for Minewsemi...).<br>
+      When you assemble a device, you pick one option per slot → codes join together → your SKU.
+      <br><strong style="color:var(--ac);font-family:var(--mono)">J + G2 + E1 + T200 = JG2E1T200</strong>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-gn" onclick="saveSKUFromPanel()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Save all changes
+      </button>
+      <button class="btn btn-ac btn-sm" onclick="addSlot();renderSKUPanel()">+ Add new slot</button>
+      <button class="btn btn-sm" onclick="resetSKUDefaults()">Reset to defaults</button>
+    </div>
+
+    <!-- SKU Quick Reference -->
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:10px;font-family:var(--mono);letter-spacing:1px;color:var(--mu)">QUICK REFERENCE — ALL CURRENT CODES</div>
+        <button class="btn btn-sm" style="font-size:10px" onclick="document.getElementById('sku-ref-full').style.display=document.getElementById('sku-ref-full').style.display==='none'?'block':'none'">Toggle full reference</button>
+      </div>
+      <div id="sku-ref-compact" style="font-family:var(--mono);font-size:12px;line-height:2;flex-wrap:wrap;display:flex;gap:8px" id="sku-ref-compact"></div>
+      <div id="sku-ref-full" style="display:none;margin-top:12px" id="sku-ref-full"></div>
+    </div>
+
+    <!-- Live preview -->
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;margin-bottom:14px">
+      <div style="font-size:9px;font-family:var(--mono);letter-spacing:1px;color:var(--mu);margin-bottom:6px">LIVE PREVIEW — example SKU using first option from each slot</div>
+      <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ac);letter-spacing:2px" id="sku-live-preview">—</div>
+      <div style="font-size:11px;color:var(--mu2);margin-top:4px" id="sku-live-breakdown"></div>
+    </div>
+
+    <!-- Slots editor -->
+    <div id="sku-panel-slots"></div>
+
+  </div>
+</div>
+
+<!-- ═══ BULK CORRECT ═══ -->
+<div class="panel" id="panel-correct">
+  <div class="panel-hdr">
+    <div class="ph">Bulk Correct</div>
+    <div class="ps">Find rows by invoice number → fix wrong category, vendor, or item name across all matching rows at once</div>
+  </div>
+  <div class="panel-body">
+    <!-- Search -->
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:10px;font-family:var(--mono);letter-spacing:1px;color:var(--mu);margin-bottom:8px">FIND ROWS TO CORRECT</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="fix-inv" class="filter-inp" placeholder="Invoice number e.g. JBT251224001" style="flex:1;min-width:200px" oninput="fixSearch()">
+        <select id="fix-cat-filter" class="filter-inp" onchange="fixSearch()">
+          <option value="">All categories</option>
+          <option>PC</option><option>RDR</option><option>SW</option><option>NET</option><option>PSU</option><option>CBL</option><option>MSC</option>
+        </select>
+        <button class="btn btn-ac btn-sm" onclick="fixSearch()">Search</button>
+        <button class="btn btn-sm" onclick="document.getElementById('fix-inv').value='';document.getElementById('fix-cat-filter').value='';fixSearch()">Clear</button>
+      </div>
+      <div style="font-size:11px;color:var(--mu);margin-top:6px;font-family:var(--mono)" id="fix-count"></div>
+    </div>
+
+    <!-- Bulk apply -->
+    <div id="fix-actions" style="display:none;background:rgba(79,142,247,.07);border:1px solid rgba(79,142,247,.2);border-radius:10px;padding:12px 16px;margin-bottom:12px">
+      <div style="font-size:10px;font-family:var(--mono);letter-spacing:1px;color:var(--ac);margin-bottom:10px">APPLY TO ALL MATCHING ROWS</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:10px">
+        <div>
+          <div class="mlbl" style="margin-bottom:3px">Change category to</div>
+          <select class="mi" id="fix-new-cat" style="margin:0">
+            <option value="">— keep existing —</option>
+          </select>
+        </div>
+        <div>
+          <div class="mlbl" style="margin-bottom:3px">Change vendor to</div>
+          <input class="mi" id="fix-new-vendor" placeholder="Leave blank to keep" style="margin:0">
+        </div>
+        <div>
+          <div class="mlbl" style="margin-bottom:3px">Change item name to</div>
+          <input class="mi" id="fix-new-item" placeholder="Leave blank to keep" style="margin:0">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-gn" onclick="applyBulkFix()">Apply to all matching rows in Sheets</button>
+        <span id="fix-progress" style="font-size:11px;color:var(--mu);font-family:var(--mono)"></span>
+      </div>
+    </div>
+
+    <!-- Results table -->
+    <div id="fix-results" style="display:none">
+      <div class="tw"><table class="dt">
+        <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="fix-all-cb" onchange="fixSelAll(this.checked)"></th>
+          <th style="width:90px"><div class="th-inner">ASSET ID</div></th>
+          <th style="width:56px"><div class="th-inner">CAT</div></th>
+          <th style="width:180px"><div class="th-inner">ITEM NAME</div></th>
+          <th style="width:130px"><div class="th-inner">VENDOR</div></th>
+          <th style="width:120px"><div class="th-inner">INVOICE</div></th>
+          <th style="width:90px"><div class="th-inner">STATUS</div></th>
+        </tr></thead>
+        <tbody id="fix-tbody"></tbody>
+      </table></div>
+      <div class="row-count" id="fix-row-count"></div>
+    </div>
+
+    <div id="fix-empty" style="text-align:center;padding:40px;color:var(--mu);font-size:13px">
+      Search by invoice number above to find rows to correct
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SETUP ═══ -->
+<div class="panel" id="panel-setup">
+  <div class="panel-hdr"><div class="ph">Google Sheets Setup</div><div class="ps">One-time setup — dashboard reads and writes live to your Sheet</div></div>
+  <div class="panel-body">
+    <div class="sc">
+      <div class="sct">Step 1 — Import Excel file</div>
+      <div class="srow"><span class="snum">1</span><div class="sbody"><strong>sheets.google.com</strong> → File → Import → Upload → select <code>KuboCare_Final.xlsx</code> → Replace spreadsheet</div></div>
+    </div>
+    <div class="sc">
+      <div class="sct">Step 2 — Paste Apps Script</div>
+      <div class="srow"><span class="snum">1</span><div class="sbody"><strong>Extensions → Apps Script</strong> → delete all → paste below → Save → Deploy → New deployment → Web app → Execute as Me → Anyone → Deploy → copy URL</div></div>
+      <div style="position:relative">
+        <div class="code-block" id="gscript">// ── KuboCare Asset Register — Apps Script ────────────────────────────────
+// Paste this entire block into Extensions → Apps Script → Save → Deploy
+
+function doPost(e) {
+  try {
+    const d = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (d.action==='ping')            return ok({status:'connected',sheet:ss.getName()});
+    if (d.action==='get_all')         return ok(getAllData(ss));
+    if (d.action==='check_dup')       return ok(checkDupFull(ss, d.inv_no));
+    if (d.action==='save_to_drive')   return ok(saveToDrive(d.fileName, d.fileData, d.mimeType, d.vendor));
+    if (d.action==='add_invoice')     { appendInvoice(ss, d.entry); return ok({status:'success'}); }
+    if (d.action==='add_components')  { appendComponents(ss, d.components); return ok({status:'success'}); }
+    if (d.action==='add_product')     { appendProduct(ss, d.product); return ok({status:'success'}); }
+    if (d.action==='update_cell')     { updateCell(ss, d.sheet, d.row, d.col, d.value); return ok({status:'success'}); }
+    if (d.action==='delete_row')      { deleteSheetRow(ss, d.sheet, d.row); return ok({status:'success'}); }
+    if (d.action==='clear_all')       { clearAll(ss); return ok({status:'success'}); }
+    return ok({status:'success'});
+  } catch(err) { return errR(err.message); }
+}
+
+// ── Get all sheet data ────────────────────────────────────────────────────
+function getAllData(ss) {
+  const sheets = {
+    'Invoice Log':          {key:'inv',  idCol:1},
+    'Component Register':   {key:'comp', idCol:0},
+    'Product Register':     {key:'prod', idCol:0},
+    'Miscellaneous Items':  {key:'misc', idCol:0}
+  };
+  const out = {inv:[],comp:[],prod:[],inv_start:0,comp_start:0,prod_start:0};
+  Object.entries(sheets).forEach(([name,cfg]) => {
+    const sh = ss.getSheetByName(name);
+    if (!sh || sh.getLastRow() < 2) return;
+    let start = 4;
+    for (let r = 4; r <= Math.min(sh.getLastRow(), 20); r++) {
+      if (sh.getRange(r, cfg.idCol+1).getValue() !== '') { start = r; break; }
+    }
+    out[cfg.key+'_start'] = start;
+    if (sh.getLastRow() < start) return;
+    const rows = sh.getRange(start,1,sh.getLastRow()-start+1,sh.getLastColumn()).getValues();
+    out[cfg.key] = rows.filter(r => r[cfg.idCol] !== '' && r[cfg.idCol] !== null);
+  });
+  return out;
+}
+
+// ── Duplicate check — returns full existing entry for comparison ──────────
+function checkDupFull(ss, inv_no) {
+  const sh = ss.getSheetByName('Invoice Log');
+  if (!sh || sh.getLastRow() < 4) return {exists: false};
+  let start = 4;
+  for (let r = 4; r <= Math.min(sh.getLastRow(), 20); r++) {
+    if (sh.getRange(r, 2).getValue() !== '') { start = r; break; }
+  }
+  const rows = sh.getRange(start, 1, sh.getLastRow()-start+1, 12).getValues();
+  const match = rows.find(r => String(r[1]).trim() === String(inv_no).trim());
+  if (!match) return {exists: false};
+  return {
+    exists: true,
+    existing: {
+      inv_no:     String(match[1]),
+      date:       String(match[2]).split('T')[0],
+      vendor:     String(match[3]),
+      item:       String(match[4]),
+      category:   String(match[5]),
+      qty:        match[6],
+      unit_price: match[7],
+      total:      match[8],
+      currency:   String(match[9]),
+      id_range:   String(match[10]),
+      source:     String(match[11])
+    }
+  };
+}
+
+// ── Save bill to Google Drive ─────────────────────────────────────────────
+function saveToDrive(fileName, fileData, mimeType, vendor) {
+  // Root folder — create once, reuse
+  const ROOT_NAME = 'KuboCare Bills';
+  let root;
+  const roots = DriveApp.getFoldersByName(ROOT_NAME);
+  root = roots.hasNext() ? roots.next() : DriveApp.createFolder(ROOT_NAME);
+
+  // Subfolder by vendor
+  const vendorName = vendor ? vendor.replace(/[^a-zA-Z0-9 \-]/g, '').trim() : 'Other';
+  let vendorFolder;
+  const vf = root.getFoldersByName(vendorName);
+  vendorFolder = vf.hasNext() ? vf.next() : root.createFolder(vendorName);
+
+  // Save file
+  const bytes = Utilities.base64Decode(fileData);
+  const blob = Utilities.newBlob(bytes, mimeType || 'application/octet-stream', fileName);
+  const existing = vendorFolder.getFilesByName(fileName);
+  if (existing.hasNext()) {
+    // File already exists — return existing link
+    const f = existing.next();
+    return {status:'success', url: f.getUrl(), id: f.getId(), existed: true};
+  }
+  const file = vendorFolder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return {status:'success', url: file.getUrl(), id: file.getId(), existed: false};
+}
+
+// ── Append invoice row ────────────────────────────────────────────────────
+function appendInvoice(ss, e) {
+  const sh = ss.getSheetByName('Invoice Log');
+  if (!sh) return;
+  const nr = sh.getLastRow()+1;
+  const idx = Math.max(1, nr-5);
+  // Col 12 = drive link (hyperlink if present)
+  const driveCell = e.drive_url
+    ? `=HYPERLINK("${e.drive_url}","View bill")`
+    : (e.source || '');
+  sh.appendRow([idx, e.inv_no, e.inv_date, e.vendor, e.item_name, e.category,
+    e.qty, e.unit_price, e.total, e.currency, e.id_range, driveCell]);
+  sh.getRange(nr,1,1,12).setBackground(nr%2===0?'#EBF4FF':'#F8FAFB');
+  // Make source col a clickable link colour
+  if (e.drive_url) sh.getRange(nr,12).setFontColor('#1A6FBF');
+}
+
+function appendComponents(ss, comps) {
+  const sh = ss.getSheetByName('Component Register');
+  if (!sh) return;
+  const SBGS = {'Inventory':'#E8F4FD','In field':'#D4EDDA','Research':'#FFF3CD','Dismantled':'#F8D7DA'};
+  comps.forEach(c => {
+    const nr = sh.getLastRow()+1;
+    sh.appendRow([c.id,c.category,c.name,c.vendor,c.inv_no,c.date,
+      c.unit_price,c.currency,'Inventory','','','',
+      '=IMAGE("https://api.qrserver.com/v1/create-qr-code/?size=60x60&data="&ENCODEURL(A'+nr+'))']);
+    sh.getRange(nr,1,1,13).setBackground(nr%2===0?'#EBF4FF':'#F8FAFB');
+    sh.getRange(nr,9).setBackground(SBGS['Inventory']);
+    sh.setRowHeight(nr,65);
+  });
+}
+
+function appendProduct(ss, p) {
+  const sh = ss.getSheetByName('Product Register');
+  if (!sh) return;
+  const nr = sh.getLastRow()+1;
+  const SBGS = {'Inventory':'#E8F4FD','In field':'#D4EDDA','Research':'#FFF3CD','Dismantled':'#F8D7DA'};
+  sh.appendRow([p.id,p.hostname||'',p.status,p.location||'',p.assembled||'',
+    p.deployed||'',p.pc||'',p.radar||'',p.wifi||'',p.psu||'',p.other||'',p.notes||'',
+    '=IMAGE("https://api.qrserver.com/v1/create-qr-code/?size=60x60&data="&ENCODEURL(A'+nr+'))']);
+  sh.getRange(nr,1,1,13).setBackground(SBGS[p.status]||'#F8FAFB');
+  sh.setRowHeight(nr,65);
+}
+
+function updateCell(ss, sheetName, row, col, value) {
+  const sh = ss.getSheetByName(sheetName);
+  if (!sh) return;
+  sh.getRange(row,col).setValue(value);
+  const SBGS = {'Inventory':'#E8F4FD','In field':'#D4EDDA','Research':'#FFF3CD','Dismantled':'#F8D7DA'};
+  if (sheetName==='Component Register' && col===9)
+    sh.getRange(row,9).setBackground(SBGS[value]||'#F8FAFB');
+  if (sheetName==='Product Register' && col===3)
+    sh.getRange(row,1,1,13).setBackground(SBGS[value]||'#F8FAFB');
+}
+
+function deleteSheetRow(ss, sheetName, row) {
+  const sh = ss.getSheetByName(sheetName);
+  if (sh) sh.deleteRow(row);
+}
+
+function appendMisc(ss, entry) {
+  const sh = ss.getSheetByName('Miscellaneous Items');
+  if (!sh) return;
+  const nr = sh.getLastRow()+1;
+  sh.appendRow(entry);
+  sh.getRange(nr,1,1,entry.length).setBackground(nr%2===0?'#EBF4FF':'#F8FAFB');
+  sh.setRowHeight(nr,18);
+}
+
+function clearAll(ss) {
+  const sheets = ['Invoice Log','Component Register','Product Register','Miscellaneous Items'];
+  sheets.forEach(name => {
+    const sh = ss.getSheetByName(name);
+    if (!sh) return;
+    // Auto-detect first data row (first non-empty row after row 4)
+    let startRow = 6;
+    for (let r = 4; r <= Math.min(sh.getLastRow(), 20); r++) {
+      const val = sh.getRange(r, 1).getValue();
+      if (val !== '' && val !== null) { startRow = r; break; }
+    }
+    if (sh.getLastRow() >= startRow) {
+      sh.getRange(startRow, 1, sh.getLastRow() - startRow + 1, sh.getLastColumn()).clearContent();
+    }
+  });
+}
+
+function doGet(e) { return ok({status:'connected'}); }
+function ok(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+function errR(m) { return ContentService.createTextOutput(JSON.stringify({status:'error',message:m})).setMimeType(ContentService.MimeType.JSON); }</div>
+        <button class="cbtn" onclick="cpScript()">Copy</button>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sct">Step 3 — Connect</div>
+      <div class="cfg-row"><div class="cfg-lbl">Apps Script URL</div><input class="cfg-inp" id="surl-inp" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveURL()"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <button class="btn btn-ac btn-sm" onclick="testConn()">Test &amp; connect</button>
+        <span id="connres" style="font-size:11px;color:var(--mu);font-family:var(--mono)"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+<div id="toast" style="display:none" class="toast"></div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='';
+try{const w=`importScripts('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');`;pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([w],{type:'application/javascript'}));}catch(e){}
+
+// ── State ──────────────────────────────────────────────────────────────────
+let SURL=localStorage.getItem('kc_url')||'';
+let catSeq=JSON.parse(localStorage.getItem('kc_seq')||'{"PC":1,"RDR":1,"SW":1,"NET":1,"PSU":1,"CBL":1,"MSC":1}');
+let SH={inv:[],comp:[],prod:[],misc:[],inv_start:7,comp_start:8,prod_start:8,misc_start:6};
+let files=[],bills=[],curR=0,synced=0,_stop=false,_blobs=[];
+let sortState={inv:{col:-1,dir:1},comp:{col:-1,dir:1},prod:{col:-1,dir:1},misc:{col:-1,dir:1}};
+let selRows={inv:new Set(),comp:new Set(),prod:new Set()};
+let pdfDoc=null,pdfPg=1,pdfZ=1.2;
+const DEFAULT_CATS=[{c:'PC',l:'GMKtec Mini PC'},{c:'RDR',l:'FDS Radar Module'},{c:'SW',l:'Software License'},{c:'NET',l:'WiFi Adapter'},{c:'PSU',l:'Power Supply'},{c:'CBL',l:'Cable'},{c:'MSC',l:'Misc'}];
+let CATS=JSON.parse(localStorage.getItem('kc_cats')||JSON.stringify(DEFAULT_CATS));
+function saveCats(){localStorage.setItem('kc_cats',JSON.stringify(CATS));}
+function getCatLabel(c){const found=CATS.find(x=>x.c===c);return found?found.l:c;}
+const SCLS={Inventory:'bg-ac','In field':'bg-gn',Research:'bg-am',Dismantled:'bg-rd'};
+const SBGS={Inventory:'#E8F4FD','In field':'#D4EDDA',Research:'#FFF3CD',Dismantled:'#F8D7DA'};
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.onload=()=>{
+  if(SURL){document.getElementById('surl-inp').value=SURL;setSS(true);loadAll();}
+  document.getElementById('erow').style.display='none';
+};
+
+// ── Nav ────────────────────────────────────────────────────────────────────
+function goTo(id,el){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+  if(id==='review')renderReview();
+  if(id==='misc'){renderMisc();updateMiscStats();}
+  if(id==='sku'){renderSKUPanel();}
+  if(id==='correct'){fixSearch();}
+  if(id==='invoices'){renderInv();populateVendorFilters();}
+  if(id==='components'){renderComps();populateCompVendors();}
+  if(id==='products')renderProds();
+}
+
+// ── Load from Sheets ───────────────────────────────────────────────────────
+async function loadAll(){
+  if(!SURL)return;
+  showOv('Loading from Sheets...');
+  try{
+    const d=await shCall({action:'get_all'});
+    SH.inv=d.inv||[]; SH.comp=d.comp||[]; SH.prod=d.prod||[]; SH.misc=d.misc||[];
+    SH.inv_start=d.inv_start||7; SH.comp_start=d.comp_start||8; SH.prod_start=d.prod_start||8; SH.misc_start=d.misc_start||6;
+    syncCatSeq();
+    renderInv();renderComps();renderProds();updateStats();
+    populateVendorFilters();populateCompVendors();
+    toast('Synced from Sheets','success');
+  }catch(e){toast('Load failed: '+e.message,'error');}
+  hideOv();
+}
+
+function syncCatSeq(){
+  const max={PC:0,RDR:0,SW:0,NET:0,PSU:0,CBL:0,MSC:0};
+  SH.comp.forEach(r=>{const m=String(r[0]||'').match(/^([A-Z]+)-(\d+)$/);if(m&&max[m[1]]!==undefined)max[m[1]]=Math.max(max[m[1]],parseInt(m[2]));});
+  SH.inv.forEach(r=>{const m=String(r[10]||'').match(/([A-Z]+)-0*(\d+)\s*(?:→.*)?$/);if(m&&max[m[1]]!==undefined)max[m[1]]=Math.max(max[m[1]],parseInt(m[2]));});
+  Object.keys(max).forEach(c=>{catSeq[c]=max[c]+1;});
+  localStorage.setItem('kc_seq',JSON.stringify(catSeq));
+}
+
+function updateStats(){
+  document.getElementById('sq').textContent=files.filter(f=>f.status==='wait').length;
+  document.getElementById('sp').textContent=files.filter(f=>f.status==='proc').length;
+  document.getElementById('sr').textContent=bills.filter(b=>b.status==='pending').length;
+  document.getElementById('sdn').textContent=synced;
+  const pend=bills.filter(b=>b.status==='pending').length;
+  const rc=document.getElementById('rc');rc.textContent=pend;rc.style.display=pend?'inline':'none';
+  document.getElementById('ct').textContent=SH.comp.length;
+  document.getElementById('cf').textContent=SH.comp.filter(r=>r[8]==='In field').length;
+  document.getElementById('cr').textContent=SH.comp.filter(r=>r[8]==='Research').length;
+  document.getElementById('ci').textContent=SH.comp.filter(r=>r[8]==='Inventory').length;
+  document.getElementById('cd').textContent=SH.comp.filter(r=>r[8]==='Dismantled').length;
+  document.getElementById('pf').textContent=SH.prod.filter(r=>r[2]==='In field').length;
+  document.getElementById('pr').textContent=SH.prod.filter(r=>r[2]==='Research').length;
+  document.getElementById('pi').textContent=SH.prod.filter(r=>r[2]==='Inventory').length;
+  document.getElementById('pd').textContent=SH.prod.filter(r=>r[2]==='Dismantled').length;
+}
+
+function fmtDate(v){if(!v)return'';const s=String(v);if(s.includes('T'))return s.split('T')[0];return s;}
+function fmtNum(v){return Number(v||0).toLocaleString();}
+function catBadge(c){const CL={PC:'bg-gn',RDR:'bg-am',SW:'bg-ac',NET:'bg-pu',PSU:'bg-rd',CBL:'bg-gr',MSC:'bg-gr'};return`<span class="badge ${CL[c]||'bg-gr'}">${c||'?'}</span>`;}
+
+function populateVendorFilters(){
+  const vendors=[...new Set(SH.inv.map(r=>String(r[3]||'')).filter(Boolean))];
+  const el=document.getElementById('inv-vendor');const cur=el.value;
+  el.innerHTML='<option value="">All</option>'+vendors.map(v=>`<option${v===cur?' selected':''}>${v}</option>`).join('');
+}
+function populateCompVendors(){
+  const vendors=[...new Set(SH.comp.map(r=>String(r[3]||'')).filter(Boolean))];
+  const el=document.getElementById('c-vendor');const cur=el.value;
+  el.innerHTML='<option value="">All</option>'+vendors.map(v=>`<option${v===cur?' selected':''}>${v}</option>`).join('');
+}
+
+// ── Sorting ────────────────────────────────────────────────────────────────
+function sortTable(type,col){
+  const s=sortState[type];
+  if(s.col===col)s.dir*=-1; else{s.col=col;s.dir=1;}
+  if(type==='inv')renderInv();
+  if(type==='comp')renderComps();
+  if(type==='prod')renderProds();
+}
+function applySortAndFilter(data,type){
+  const s=sortState[type];
+  let d=[...data];
+  if(s.col>=0)d.sort((a,b)=>{
+    const av=String(a[s.col]||'').toLowerCase(),bv=String(b[s.col]||'').toLowerCase();
+    const an=parseFloat(av),bn=parseFloat(bv);
+    if(!isNaN(an)&&!isNaN(bn))return(an-bn)*s.dir;
+    return av.localeCompare(bv)*s.dir;
+  });
+  return d;
+}
+
+// ── Invoice Log render ─────────────────────────────────────────────────────
+function renderInv(){
+  const srch=(document.getElementById('inv-search')?.value||'').toLowerCase();
+  const cat=document.getElementById('inv-cat')?.value||'';
+  const vendor=document.getElementById('inv-vendor')?.value||'';
+  let data=SH.inv.map((r,i)=>({r,i,shRow:SH.inv_start+i}));
+  data=data.filter(({r})=>{
+    const s=`${r[1]} ${r[3]} ${r[4]} ${r[10]}`.toLowerCase();
+    return(!srch||s.includes(srch))&&(!cat||r[5]===cat)&&(!vendor||r[3]===vendor);
+  });
+  data=applySortAndFilter(data.map(x=>x.r),'inv').map((r,idx)=>({r,i:SH.inv.indexOf(r),shRow:SH.inv_start+SH.inv.indexOf(r)}));
+  const tbody=document.getElementById('inv-tbody');
+  if(!data.length){tbody.innerHTML=`<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--mu)">No invoices match filters</td></tr>`;document.getElementById('inv-count').textContent='';return;}
+  tbody.innerHTML=data.map(({r,i,shRow},idx)=>`<tr class="${selRows.inv.has(i)?'selected':''}" onclick="rowClick(event,'inv',${i})">
+    <td class="cb-cell"><input type="checkbox" ${selRows.inv.has(i)?'checked':''} onchange="rowSel('inv',${i},this.checked)" onclick="e=>e.stopPropagation()"></td>
+    <td style="color:var(--mu);font-family:var(--mono)">${idx+1}</td>
+    <td>${ec('Invoice Log',shRow,2,r[1],'mono')}</td>
+    <td style="font-family:var(--mono);font-size:11px">${fmtDate(r[2])}</td>
+    <td>${ec('Invoice Log',shRow,4,r[3])}</td>
+    <td>${ec('Invoice Log',shRow,5,r[4])}</td>
+    <td>${catBadge(r[5])}</td>
+    <td style="text-align:center">${ec('Invoice Log',shRow,7,r[6],'center')}</td>
+    <td style="text-align:right">${ec('Invoice Log',shRow,8,r[7],'right')}</td>
+    <td style="text-align:right;font-weight:500">${fmtNum(r[8])}</td>
+    <td style="font-family:var(--mono)">${r[9]||''}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--ac)">${r[10]||''}</td>
+    <td><button class="btn btn-rd btn-sm" style="padding:1px 6px" onclick="event.stopPropagation();delRow('inv',${i},${shRow})">✕</button></td>
+  </tr>`).join('');
+  document.getElementById('inv-count').textContent=`Showing ${data.length} of ${SH.inv.length} invoices`;
+}
+
+// ── Component Register render ──────────────────────────────────────────────
+function renderComps(){
+  const srch=(document.getElementById('c-search')?.value||'').toLowerCase();
+  const cat=document.getElementById('c-cat')?.value||'';
+  const sta=document.getElementById('c-sta')?.value||'';
+  const vendor=document.getElementById('c-vendor')?.value||'';
+  const device=(document.getElementById('c-device')?.value||'').toLowerCase();
+  let data=SH.comp.map((r,i)=>({r,i,shRow:SH.comp_start+i}));
+  data=data.filter(({r})=>{
+    const s=`${r[0]} ${r[2]} ${r[3]} ${r[4]}`.toLowerCase();
+    return(!srch||s.includes(srch))&&(!cat||r[1]===cat)&&(!sta||r[8]===sta)&&(!vendor||r[3]===vendor)&&(!device||String(r[9]||'').toLowerCase().includes(device));
+  });
+  data=applySortAndFilter(data.map(x=>x.r),'comp').map((r,idx)=>({r,i:SH.comp.indexOf(r),shRow:SH.comp_start+SH.comp.indexOf(r)}));
+  const tbody=document.getElementById('comp-tbody');
+  if(!data.length){tbody.innerHTML=`<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--mu)">No components match filters</td></tr>`;document.getElementById('comp-count').textContent='';return;}
+  tbody.innerHTML=data.map(({r,i,shRow})=>`<tr class="${selRows.comp.has(i)?'selected':''}">
+    <td class="cb-cell"><input type="checkbox" ${selRows.comp.has(i)?'checked':''} onchange="rowSel('comp',${i},this.checked)"></td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--ac);white-space:nowrap">${r[0]}</td>
+    <td>${catBadge(r[1])}</td>
+    <td>${ec('Component Register',shRow,3,r[2])}</td>
+    <td style="color:var(--mu)">${ec('Component Register',shRow,4,r[3])}</td>
+    <td style="font-family:var(--mono);font-size:11px">${r[4]||''}</td>
+    <td style="font-family:var(--mono);font-size:11px">${fmtDate(r[5])}</td>
+    <td style="text-align:right;font-family:var(--mono)">${fmtNum(r[6])}</td>
+    <td style="font-family:var(--mono);font-size:10px">${r[7]||''}</td>
+    <td>${statusSel('Component Register',shRow,9,i,r[8])}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--mu)">${ec('Component Register',shRow,10,r[9]||'')}</td>
+    <td>${ec('Component Register',shRow,12,r[11]||'')}</td>
+    <td><button class="btn btn-rd btn-sm" style="padding:1px 6px" onclick="delRow('comp',${i},${shRow})">✕</button></td>
+  </tr>`).join('');
+  document.getElementById('comp-count').textContent=`Showing ${data.length} of ${SH.comp.length} components`;
+  updateStats();
+}
+
+// ── Devices render ─────────────────────────────────────────────────────────
+function renderProds(){
+  const srch=(document.getElementById('p-search')?.value||'').toLowerCase();
+  const sta=document.getElementById('p-sta')?.value||'';
+  let data=SH.prod.map((r,i)=>({r,i,shRow:SH.prod_start+i}));
+  data=data.filter(({r})=>{
+    const s=`${r[0]} ${r[1]} ${r[3]}`.toLowerCase();
+    return(!srch||s.includes(srch))&&(!sta||r[2]===sta);
+  });
+  data=applySortAndFilter(data.map(x=>x.r),'prod').map((r,idx)=>({r,i:SH.prod.indexOf(r),shRow:SH.prod_start+SH.prod.indexOf(r)}));
+  const tbody=document.getElementById('prod-tbody');
+  if(!data.length){tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--mu)">No devices match filters</td></tr>`;document.getElementById('prod-count').textContent='';return;}
+  tbody.innerHTML=data.map(({r,i,shRow})=>`<tr>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--ac)">${r[0]}</td>
+    <td>${ec('Product Register',shRow,2,r[1])}</td>
+    <td>${statusSel('Product Register',shRow,3,i,r[2])}</td>
+    <td>${ec('Product Register',shRow,4,r[3])}</td>
+    <td style="font-family:var(--mono);font-size:11px">${fmtDate(r[4])}</td>
+    <td style="font-family:var(--mono);font-size:11px">${fmtDate(r[5])}</td>
+    <td style="font-family:var(--mono);font-size:11px">${r[6]||''}</td>
+    <td style="font-family:var(--mono);font-size:11px">${r[7]||''}</td>
+    <td style="font-family:var(--mono);font-size:11px">${r[8]||''}</td>
+    <td style="font-family:var(--mono);font-size:11px">${r[9]||''}</td>
+    <td>${ec('Product Register',shRow,12,r[11]||'')}</td>
+    <td style="display:flex;gap:4px">
+      <button class="btn btn-rd btn-sm" style="padding:1px 5px;font-size:10px" onclick="dismantleProd('${r[0]}',${shRow},${i})">Dismantle</button>
+      <button class="btn btn-rd btn-sm" style="padding:1px 5px;font-size:10px" onclick="delRow('prod',${i},${shRow})">✕</button>
+    </td>
+  </tr>`).join('');
+  document.getElementById('prod-count').textContent=`Showing ${data.length} of ${SH.prod.length} devices`;
+  updateStats();
+}
+
+// ── Inline edit cell ───────────────────────────────────────────────────────
+function ec(sheet,shRow,col,val,cls=''){
+  const v=String(val||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  return `<span class="editable" style="cursor:text;border-bottom:1px dashed transparent;transition:border .1s" onmouseenter="this.style.borderBottomColor='var(--ac)'" onmouseleave="this.style.borderBottomColor='transparent'" onclick="startEdit(this,'${sheet}',${shRow},${col})" title="Click to edit">${val||''}</span>`;
+}
+
+function startEdit(el,sheet,shRow,col){
+  const cur=el.textContent;
+  const inp=document.createElement('input');
+  inp.className='cell-edit';
+  inp.value=cur;
+  inp.style.width=Math.max(60,cur.length*7+20)+'px';
+  el.replaceWith(inp);
+  inp.focus();inp.select();
+  const save=async()=>{
+    const nv=inp.value.trim();
+    const span=document.createElement('span');
+    span.className='editable';span.textContent=nv;
+    span.style.cssText='cursor:text;border-bottom:1px dashed transparent;transition:border .1s';
+    span.setAttribute('onmouseenter',"this.style.borderBottomColor='var(--ac)'");
+    span.setAttribute('onmouseleave',"this.style.borderBottomColor='transparent'");
+    span.setAttribute('onclick',`startEdit(this,'${sheet}',${shRow},${col})`);
+    span.title='Click to edit';
+    inp.replaceWith(span);
+    if(nv!==cur){
+      try{
+        await shCall({action:'update_cell',sheet,row:shRow,col,value:nv});
+        // Update local data
+        const arrKey=sheet==='Invoice Log'?'inv':sheet==='Component Register'?'comp':'prod';
+        const start=sheet==='Invoice Log'?SH.inv_start:sheet==='Component Register'?SH.comp_start:SH.prod_start;
+        const localIdx=shRow-start;
+        if(SH[arrKey][localIdx]) SH[arrKey][localIdx][col-1]=nv;
+        updateStats();
+        toast('Saved to Sheets','success');
+      }catch(e){toast('Save failed: '+e.message,'error');}
+    }
+  };
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',ev=>{if(ev.key==='Enter')inp.blur();if(ev.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+
+function statusSel(sheet,shRow,col,localIdx,cur){
+  const opts=['Inventory','In field','Research','Dismantled'];
+  return `<select class="badge ${SCLS[cur]||'bg-gr'}" style="cursor:pointer;border:none;background:transparent;font-family:var(--mono);font-size:10px;font-weight:500" onchange="updateStatus(this,'${sheet}',${shRow},${col},${localIdx})">
+    ${opts.map(o=>`<option value="${o}"${o===cur?' selected':''}>${o}</option>`).join('')}
+  </select>`;
+}
+
+async function updateStatus(el,sheet,shRow,col,localIdx){
+  const v=el.value;
+  el.className=`badge ${SCLS[v]||'bg-gr'}`;
+  try{
+    await shCall({action:'update_cell',sheet,row:shRow,col,value:v});
+    const arrKey=sheet==='Component Register'?'comp':'prod';
+    if(SH[arrKey][localIdx]) SH[arrKey][localIdx][col-1]=v;
+    updateStats();
+    toast('Status updated','success');
+  }catch(e){toast('Update failed','error');}
+}
+
+// ── Selection & bulk ops ───────────────────────────────────────────────────
+function rowClick(e,type,i){if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'||e.target.tagName==='SELECT')return;}
+function rowSel(type,i,checked){
+  if(checked)selRows[type].add(i); else selRows[type].delete(i);
+  updateBulkBar(type);
+}
+function selAll(type,checked){
+  const data=getFilteredIndices(type);
+  if(checked)data.forEach(i=>selRows[type].add(i)); else selRows[type].clear();
+  if(type==='inv')renderInv(); if(type==='comp')renderComps();
+  updateBulkBar(type);
+}
+function getFilteredIndices(type){
+  if(type==='inv') return SH.inv.map((_,i)=>i);
+  return SH.comp.map((_,i)=>i);
+}
+function updateBulkBar(type){
+  const count=selRows[type].size;
+  const bar=document.getElementById(type==='inv'?'inv-bulk':'comp-bulk');
+  if(count>0){bar.classList.add('show');}else{bar.classList.remove('show');}
+  const cEl=document.getElementById(type==='inv'?'inv-sel-count':'comp-sel-count');
+  if(cEl)cEl.textContent=`${count} selected`;
+}
+function clearSel(type){selRows[type].clear();updateBulkBar(type);if(type==='inv')renderInv();if(type==='comp')renderComps();}
+
+async function bulkDelete(type){
+  const ids=type==='inv'?selRows.inv:selRows.comp;
+  if(!ids.size)return;
+  if(!confirm(`Delete ${ids.size} row(s) from Google Sheets? This cannot be undone.`))return;
+  showOv(`Deleting ${ids.size} rows...`);
+  const arr=type==='inv'?SH.inv:SH.comp;
+  const start=type==='inv'?SH.inv_start:SH.comp_start;
+  const sheetName=type==='inv'?'Invoice Log':'Component Register';
+  // Delete in reverse order so row numbers stay valid
+  const sorted=[...ids].sort((a,b)=>b-a);
+  for(const i of sorted){
+    try{await shCall({action:'delete_row',sheet:sheetName,row:start+i});}catch(e){}
+  }
+  await loadAll();
+  selRows[type].clear();
+  hideOv();
+  toast(`${ids.size} rows deleted`,'success');
+}
+
+async function bulkStatus(){
+  const sta=document.getElementById('bulk-status').value;
+  if(!sta)return;
+  const ids=[...selRows.comp];
+  if(!ids.length)return;
+  showOv(`Updating ${ids.length} statuses...`);
+  for(const i of ids){
+    const shRow=SH.comp_start+i;
+    try{
+      await shCall({action:'update_cell',sheet:'Component Register',row:shRow,col:9,value:sta});
+      SH.comp[i][8]=sta;
+    }catch(e){}
+  }
+  hideOv();
+  selRows.comp.clear();
+  updateBulkBar('comp');
+  renderComps();updateStats();
+  toast(`${ids.length} statuses updated to ${sta}`,'success');
+}
+
+async function delRow(type,localIdx,shRow){
+  if(!confirm('Delete this row from Google Sheets?'))return;
+  const sheet=type==='inv'?'Invoice Log':type==='comp'?'Component Register':'Product Register';
+  try{
+    await shCall({action:'delete_row',sheet,row:shRow});
+    const arr=type==='inv'?SH.inv:type==='comp'?SH.comp:SH.prod;
+    arr.splice(localIdx,1);
+    if(type==='inv')renderInv(); else if(type==='comp')renderComps(); else renderProds();
+    updateStats();
+    toast('Row deleted','success');
+  }catch(e){toast('Delete failed: '+e.message,'error');}
+}
+
+// ── Dismantle device ───────────────────────────────────────────────────────
+async function dismantleProd(pid,shRow,localIdx){
+  if(!confirm('Dismantle this device? Components will return to Inventory.'))return;
+  showOv('Dismantling...');
+  try{
+    await shCall({action:'update_cell',sheet:'Product Register',row:shRow,col:3,value:'Dismantled'});
+    SH.prod[localIdx][2]='Dismantled';
+    const prod=SH.prod[localIdx];
+    const compIds=[prod[6],prod[7],prod[8],prod[9]].filter(Boolean);
+    for(const cid of compIds){
+      const ci=SH.comp.findIndex(r=>r[0]===cid);
+      if(ci>=0){
+        await shCall({action:'update_cell',sheet:'Component Register',row:SH.comp_start+ci,col:9,value:'Inventory'});
+        SH.comp[ci][8]='Inventory';
+        await shCall({action:'update_cell',sheet:'Component Register',row:SH.comp_start+ci,col:10,value:''});
+        SH.comp[ci][9]='';
+      }
+    }
+    renderProds();renderComps();updateStats();
+    toast('Device dismantled — components returned to Inventory','success');
+  }catch(e){toast('Failed: '+e.message,'error');}
+  hideOv();
+}
+
+// ── Upload & Extract ───────────────────────────────────────────────────────
+function doDrag(e,t){e.preventDefault();document.getElementById('dz').classList.toggle('drag',t==='over');if(t==='drop'){document.getElementById('dz').classList.remove('drag');addFiles(e.dataTransfer.files);}}
+function onSel(e){addFiles(e.target.files);e.target.value='';}
+function addFiles(fl){
+  let added=0;
+  for(const f of fl){if(!f.name.match(/\.(pdf|jpg|jpeg|png|heic|webp)$/i))continue;if(!files.find(x=>x.file.name===f.name&&x.file.size===f.size)){files.push({file:f,status:'wait'});added++;}}
+  if(added){renderQ();updateStats();document.getElementById('erow').style.display='flex';}
+}
+function renderQ(){
+  const L={wait:'QUEUED',proc:'READING...',review:'NEEDS REVIEW',done:'SYNCED',skip:'SKIPPED'};
+  document.getElementById('fq').innerHTML=files.map((f,i)=>`
+    <div class="fitem"><span class="ftag ft-${f.status}">${L[f.status]||f.status}</span>
+    <span class="fn">${f.file.name}</span><span class="fsz">${(f.file.size/1024).toFixed(0)}KB</span>
+    <button class="btn" style="padding:1px 6px;font-size:10px" onclick="rmFile(${i})">×</button></div>`).join('');
+}
+function rmFile(i){files.splice(i,1);renderQ();updateStats();}
+
+let exDone=0,exTotal=0;
+async function startExtract(){
+  document.getElementById('ebtn').disabled=true;
+  document.getElementById('pb').style.display='block';
+  document.getElementById('logbox').style.display='block';
+  document.getElementById('logbox').innerHTML='';
+  document.getElementById('stopbtn').style.display='inline-flex';
+  _stop=false;
+  const waiting=files.filter(f=>f.status==='wait');
+  exDone=0;exTotal=waiting.length;updES();
+  for(let i=0;i<waiting.length;i+=5){
+    if(_stop)break;
+    await Promise.all(waiting.slice(i,i+5).map(fw=>procBill(fw)));
+  }
+  document.getElementById('stopbtn').style.display='none';
+  document.getElementById('ebtn').disabled=false;
+  document.getElementById('estat').innerHTML=`<span style="color:var(--gn)">✓ Done</span> — ${exTotal} bills · ${bills.filter(b=>b.status==='pending').length} pending review`;
+  document.getElementById('pbf').style.width='100%';
+  updateStats();
+}
+function updES(){document.getElementById('pbf').style.width=(exTotal?Math.round(exDone/exTotal*100):0)+'%';document.getElementById('estat').innerHTML=exDone===exTotal&&exTotal>0?'':` <span style="color:var(--am)">●</span> ${exDone}/${exTotal} — 5 parallel`;}
+function addLog(msg,c='var(--mu2)'){const el=document.getElementById('logbox');const d=document.createElement('div');d.style.cssText=`color:${c};padding:1px 0`;d.textContent=msg;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+
+async function procBill(fw){
+  const fi=files.indexOf(fw);files[fi].status='proc';renderQ();
+  let b64=null;
+  try{
+    b64=await toB64(fw.file);
+    const isPDF=fw.file.type==='application/pdf'||fw.file.name.toLowerCase().endsWith('.pdf');
+    const result=await callClaude(b64,fw.file.name,isPDF,fw.file.type);
+    result.fileName=fw.file.name;result.fileB64=fw.file.size<900*1024?b64:null;result._ref=fw;result.fileType=fw.file.type;result.status='pending';
+    bills.push(result);files[fi].status='review';
+    addLog(`✓ ${fw.file.name}`,'var(--gn)');
+  }catch(err){
+    bills.push({fileName:fw.file.name,fileType:fw.file.type,fileB64:fw.file.size<900*1024?b64:null,_ref:fw,
+      items:[{item_name:'',category:'PC',qty:1,unit_price:0,currency:'INR',confidence:{}}],
+      questions:[{question:'Could not read automatically. Fill in manually.',value:''}],
+      vendor:'',invoice_no:'',invoice_date:'',status:'pending',error:true});
+    files[fi].status='review';
+    addLog(`✗ ${fw.file.name} — manual entry`,'var(--am)');
+  }
+  exDone++;updES();updateStats();
+}
+async function toB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
+
+async function callClaude(b64,fname,isPDF,mimeType){
+  const mt=isPDF?'application/pdf':(mimeType||'image/jpeg');
+  const docBlock=isPDF
+    ?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}
+    :{type:'image',source:{type:'base64',media_type:mt,data:b64}};
+  const catList=CATS.map(c=>c.c+' = '+c.l).join(', ');
+  const prompt='Extract ALL fields from this KuboCare procurement invoice.\n'
+    +'Categories (use exact code): '+catList+'\n'
+    +'Return ONLY a JSON object with these fields:\n'
+    +'vendor (string), invoice_no (string), invoice_date (YYYY-MM-DD string),\n'
+    +'items (array of: item_name, category, qty integer, unit_price number, total number, currency INR or USD,\n'
+    +'confidence object with high/medium/low for each field), questions array, is_handwritten boolean.\n'
+    +'No markdown, no explanation, just the JSON object.';
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,
+      messages:[{role:'user',content:[docBlock,{type:'text',text:prompt}]}]})
+  });
+  const d=await resp.json();
+  if(d.error)throw new Error(d.error.message);
+  if(!d.content||!d.content.length)throw new Error('Empty response');
+  let txt=d.content.map(function(c){return c.text||'';}).join('').trim();
+  txt=txt.replace(/^```json/,'').replace(/^```/,'').replace(/```$/,'').trim();
+  const s=txt.indexOf('{'),en=txt.lastIndexOf('}');
+  if(s>=0&&en>s)txt=txt.slice(s,en+1);
+  let p;
+  try{p=JSON.parse(txt);}catch(e){throw new Error('Bad JSON from AI');}
+  if(!Array.isArray(p.items)||!p.items.length){
+    p.items=[{item_name:p.item_name||'',category:p.category||'PC',
+      qty:p.qty||1,unit_price:p.unit_price||0,total:p.total||0,
+      currency:p.currency||'INR',
+      confidence:{item_name:'high',qty:'high',unit_price:'high',category:'high'}}];
+  }
+  p.items=p.items.map(function(item){return Object.assign({},item,{
+    qty:parseInt(item.qty)||1,
+    unit_price:parseFloat(item.unit_price)||0,
+    total:parseFloat(item.total)||0,
+    confidence:item.confidence||{item_name:'high',qty:'high',unit_price:'high',category:'high'}
+  });});
+  if(!p.questions)p.questions=[];
+  return p;
+}
+
+// ── PDF viewer ─────────────────────────────────────────────────────────────
+function freeBlobs(){_blobs.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}});_blobs=[];}
+function mkBlob(b64,mime){const bin=atob(b64),len=bin.length,bytes=new Uint8Array(len);for(let i=0;i<len;i++)bytes[i]=bin.charCodeAt(i);const u=URL.createObjectURL(new Blob([bytes],{type:mime}));_blobs.push(u);return u;}
+// ── PDF viewer with selectable text layer ─────────────────────────────────
+async function loadPDF(b64){
+  try{
+    const bin=atob(b64),len=bin.length,bytes=new Uint8Array(len);
+    for(let i=0;i<len;i++)bytes[i]=bin.charCodeAt(i);
+    pdfDoc=await pdfjsLib.getDocument({data:bytes,disableWorker:true,verbosity:0}).promise;
+    pdfPg=1; pdfZ=1.3;
+    document.getElementById('vtb').style.display='flex';
+    document.getElementById('vph').style.display='none';
+    await renderPg();
+  }catch(e){ showPDFIframe(b64); }
+}
+
+async function renderPg(){
+  if(!pdfDoc)return;
+  try{
+    const pg=await pdfDoc.getPage(pdfPg);
+    const vp=pg.getViewport({scale:pdfZ});
+    const vcw=document.getElementById('vcw');
+
+    // Build wrapper with canvas + text layer
+    vcw.innerHTML=`<div class="pdf-wrap" id="pdf-wrap" style="width:${vp.width}px;height:${vp.height}px">
+      <canvas id="pdfcvs" width="${vp.width}" height="${vp.height}" style="display:block"></canvas>
+      <div class="textLayer" id="textLayer" style="width:${vp.width}px;height:${vp.height}px"></div>
+    </div>`;
+
+    // Render canvas
+    const cvs=document.getElementById('pdfcvs');
+    await pg.render({canvasContext:cvs.getContext('2d'),viewport:vp}).promise;
+
+    // Render text layer — this is what makes text selectable
+    const textContent=await pg.getTextContent();
+    const textLayer=document.getElementById('textLayer');
+    pdfjsLib.renderTextLayer({
+      textContentSource: textContent,
+      container: textLayer,
+      viewport: vp,
+      textDivs: []
+    });
+
+    document.getElementById('pginfo').textContent=`Page ${pdfPg} of ${pdfDoc.numPages}`;
+    document.getElementById('zinfo').textContent=Math.round(pdfZ*100)+'%';
+  }catch(e){ console.error('renderPg error',e); }
+}
+
+function showPDFIframe(b64){
+  if(!b64)return;
+  // Fallback: open in new tab where selection always works
+  const url=mkBlob(b64,'application/pdf');
+  const vcw=document.getElementById('vcw');
+  vcw.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--mu)">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" style="opacity:.3"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <div style="font-size:12px">PDF preview unavailable</div>
+    <a href="${url}" target="_blank" style="color:var(--ac);font-size:12px;text-decoration:underline">Open PDF in new tab →</a>
+  </div>`;
+  document.getElementById('vtb').style.display='none';
+}
+
+function prevPg(){if(pdfPg>1){pdfPg--;renderPg();}}
+function nextPg(){if(pdfDoc&&pdfPg<pdfDoc.numPages){pdfPg++;renderPg();}}
+function zIn(){pdfZ=Math.min(3,pdfZ+0.2);renderPg();}
+function zOut(){pdfZ=Math.max(0.5,pdfZ-0.2);renderPg();}
+
+// ── Review ─────────────────────────────────────────────────────────────────
+function renderReview(){
+  const p=bills.filter(b=>b.status==='pending');
+  document.getElementById('rempty').style.display=p.length?'none':'flex';
+  document.getElementById('rmain').style.display=p.length?'grid':'none';
+  if(p.length){
+    document.getElementById('rt').textContent=p.length;
+    showAt(Math.min(curR,p.length-1));
+    // Show sort reminder if multiple bills pending
+    const amsg=document.getElementById('amsg');
+    if(p.length>1&&amsg&&!amsg.textContent){
+      amsg.innerHTML='<span style="color:var(--am)">Tip: approve oldest invoices first so asset IDs match purchase dates. <button class="btn btn-sm btn-am" style="padding:2px 8px;font-size:10px" onclick="sortBillsByDate()">Sort by date ↑</button></span>';
+    }
+  }
+}
+
+function sortBillsByDate(){
+  // Sort pending bills oldest-first by extracted invoice_date
+  const pending=bills.filter(b=>b.status==='pending');
+  const others=bills.filter(b=>b.status!=='pending');
+  pending.sort((a,b)=>{
+    const da=a.invoice_date||'9999';
+    const db=b.invoice_date||'9999';
+    return da.localeCompare(db);
+  });
+  bills=[...others,...pending];
+  curR=0;
+  renderReview();
+  toast('Bills sorted oldest → newest. Approve in this order for correct asset IDs.','success');
+}
+async function showAt(idx){
+  const pending=bills.filter(b=>b.status==='pending');
+  if(!pending.length)return;
+  curR=idx;const bill=pending[idx];
+  document.getElementById('ri').textContent=idx+1;
+  document.getElementById('rfn').textContent=bill.fileName;
+  document.getElementById('rprev').disabled=idx===0;
+  document.getElementById('rnext').disabled=idx===pending.length-1;
+  document.getElementById('amsg').textContent='';
+  freeBlobs();pdfDoc=null;
+  const vcw=document.getElementById('vcw');
+  vcw.innerHTML=`<div class="vph" id="vph" style="display:flex;flex-direction:column"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" style="opacity:.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div style="font-size:11px;font-family:var(--mono)">${bill.fileName}</div></div>`;
+  document.getElementById('vtb').style.display='none';
+  if(!bill.fileB64&&bill._ref){try{bill.fileB64=await toB64(bill._ref.file);}catch(e){}}
+  if(bill.fileB64){
+    const fn=(bill.fileName||'').toLowerCase(),ft=(bill.fileType||'').toLowerCase();
+    const isPDF=ft.includes('pdf')||fn.endsWith('.pdf'),isHEIC=fn.endsWith('.heic');
+    const isImg=!isPDF&&!isHEIC&&(ft.startsWith('image')||fn.match(/\.(jpg|jpeg|png|webp|gif)$/));
+    if(isImg){const mime=ft.startsWith('image/')?ft:fn.endsWith('.png')?'image/png':fn.endsWith('.webp')?'image/webp':'image/jpeg';const url=mkBlob(bill.fileB64,mime);vcw.innerHTML=`<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:3px;display:block;margin:auto">`;}
+    else if(isPDF){await loadPDF(bill.fileB64);}
+    else if(isHEIC){vcw.innerHTML=`<div style="text-align:center;padding:40px;color:var(--mu);font-size:11px">HEIC — cannot preview<br>Fill in details on the right</div>`;}
+  }
+  // Full duplicate check with existing entry data
+  bill._dupData=null;
+  if(SURL&&bill.invoice_no){
+    try{
+      const r=await shCall({action:'check_dup',inv_no:bill.invoice_no});
+      if(r.exists){
+        bill._dupData=r.existing;
+      }
+    }catch(e){}
+  }
+  let dupHTML='';
+  if(bill._dupData){
+    dupHTML=`<div class="dup-warn" style="cursor:pointer" onclick="showDupComparison()" title="Click to compare">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div><strong>Duplicate invoice number</strong> — ${bill.invoice_no} already in Sheets · <u style="cursor:pointer" onclick="showDupComparison()">Compare side-by-side →</u></div>
+    </div>`;
+  }
+  let qHTML='';
+  if(bill.questions?.length)qHTML=`<div style="font-size:9px;font-family:var(--mono);letter-spacing:1px;color:var(--am);margin-bottom:5px">AI NEEDS CLARIFICATION</div>`+bill.questions.map((q,qi)=>`<div class="qcard"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--am)" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg><div><div class="qtxt">${q.question}</div><input class="field-inp" style="font-size:11px" value="${q.value||''}" id="qa-${qi}" placeholder="Your answer..."></div></div>`).join('');
+  else if(!bill.error)qHTML=`<div style="font-size:10px;color:var(--mu);font-family:var(--mono)">All fields extracted confidently</div>`;
+  document.getElementById('aiq').innerHTML=dupHTML+qHTML;
+  buildEditor(bill);
+  // Show warning if this bill's date is older than latest in Sheet
+  const warn=document.getElementById('date-order-warn');
+  if(warn&&bill.invoice_date&&SH.inv.length){
+    const latestInSheet=SH.inv.reduce((max,r)=>{
+      const d=String(r[2]||'').split('T')[0];
+      return d>max?d:max;
+    },'');
+    const billDate=bill.invoice_date;
+    if(billDate<latestInSheet){
+      warn.style.display='inline';
+      warn.textContent=`⚠ This bill (${billDate}) is older than latest in Sheet (${latestInSheet}) — approve oldest invoices first`;
+    }else{warn.style.display='none';}
+  }
+}
+function confB(c){return c?`<span class="conf ${c==='high'?'ch':c==='medium'?'cm':'cl'}">${c==='high'?'HI':c==='medium'?'MED':'LOW'}</span>`:''}
+function frow(lbl,id,val,conf,type='text'){return `<div class="field-row"><div class="field-lbl">${lbl}${confB(conf)}</div><input type="${type}" class="field-inp${conf==='low'?' low':conf==='high'?' ok':''}" id="${id}" value="${val||''}"></div>`;}
+
+// Smart combobox — type to filter, click to select, or type new value
+function comboRow(lbl,id,val,conf,suggestions){
+  const cls=conf==='low'?'low':conf==='high'?'ok':'';
+  return `<div class="field-row"><div class="field-lbl">${lbl}${confB(conf)}</div>
+  <div class="combo-wrap">
+    <input class="combo-inp ${cls}" id="${id}" value="${val||''}" autocomplete="off"
+      oninput="comboFilter('${id}')" onfocus="comboOpen('${id}')" onblur="setTimeout(()=>comboClose('${id}'),180)" onkeydown="comboKey(event,'${id}')">
+    <span class="combo-arrow">▾</span>
+    <div class="combo-drop" id="${id}-drop">
+      ${suggestions.map((s,i)=>`<div class="combo-opt" id="${id}-opt-${i}" onmousedown="comboPick('${id}','${s.replace(/'/g,"\'")}')">
+        ${s}</div>`).join('')}
+    </div>
+  </div></div>`;
+}
+
+function getVendorSuggestions(){
+  const from_sheet=[...new Set(SH.inv.map(r=>String(r[3]||'')).filter(Boolean))];
+  const defaults=['Avinya','Joybien Technologies'];
+  return [...new Set([...from_sheet,...defaults])].sort();
+}
+function getItemSuggestions(){
+  const from_sheet=[...new Set(SH.inv.map(r=>String(r[4]||'')).filter(Boolean))];
+  const defaults=['GMKtec Mini PC','FDS Radar Module (BM502)','AI Based FDS Software License','LOUP AX3000 WiFi 6 Adapter','Power Supply Unit'];
+  return [...new Set([...from_sheet,...defaults])].sort();
+}
+function comboOpen(id){
+  comboFilter(id);
+  document.getElementById(id+'-drop').classList.add('open');
+}
+function comboClose(id){document.getElementById(id+'-drop').classList.remove('open');}
+function comboFilter(id){
+  const val=(document.getElementById(id).value||'').toLowerCase();
+  const opts=document.querySelectorAll(`#${id}-drop .combo-opt`);
+  let any=false;
+  opts.forEach(o=>{
+    const match=!val||o.textContent.toLowerCase().includes(val);
+    o.style.display=match?'':'none';
+    if(match)any=true;
+  });
+  if(any)document.getElementById(id+'-drop').classList.add('open');
+}
+function comboPick(id,val){
+  document.getElementById(id).value=val;
+  comboClose(id);
+}
+function comboKey(e,id){
+  const drop=document.getElementById(id+'-drop');
+  const visible=[...drop.querySelectorAll('.combo-opt')].filter(o=>o.style.display!=='none');
+  const cur=drop.querySelector('.combo-opt.sel');
+  if(e.key==='ArrowDown'){e.preventDefault();
+    const idx=visible.indexOf(cur);const next=visible[idx+1]||visible[0];
+    if(cur)cur.classList.remove('sel');if(next)next.classList.add('sel');
+  }else if(e.key==='ArrowUp'){e.preventDefault();
+    const idx=visible.indexOf(cur);const prev=visible[idx-1]||visible[visible.length-1];
+    if(cur)cur.classList.remove('sel');if(prev)prev.classList.add('sel');
+  }else if(e.key==='Enter'&&cur){e.preventDefault();comboPick(id,cur.textContent.trim());
+  }else if(e.key==='Escape'){comboClose(id);}
+}
+function catSel(id,val,conf){return `<div class="field-row"><div class="field-lbl">Category${confB(conf)}</div><select class="field-inp${conf==='low'?' low':''}" id="${id}">${CATS.map(c=>`<option value="${c.c}"${c.c===val?' selected':''}>${c.c} — ${c.l}</option>`).join('')}</select></div>`;}
+function currSel(id,val){return `<div class="field-row"><div class="field-lbl">Currency</div><select class="field-inp" id="${id}"><option${val==='INR'?' selected':''}>INR</option><option${val==='USD'?' selected':''}>USD</option></select></div>`;}
+function buildEditor(bill){
+  let items=Array.isArray(bill.items)&&bill.items.length?bill.items:[{item_name:'',category:'PC',qty:1,unit_price:0,currency:'INR',confidence:{}}];
+  const hc=(bill.vendor||bill.invoice_no)?'high':'low';
+  const vendors=getVendorSuggestions();
+  const itemNames=getItemSuggestions();
+  let h=`<div style="margin-bottom:10px">
+    <div style="font-size:9px;font-family:var(--mono);letter-spacing:1px;color:var(--mu);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--bd)">INVOICE HEADER</div>
+    ${comboRow('Vendor','hv',bill.vendor||'',hc,vendors)}
+    ${frow('Invoice No.','hin',bill.invoice_no||'',hc)}
+    ${frow('Date','hd',bill.invoice_date||'',hc,'date')}
+  </div>`;
+  items.forEach((item,ii)=>{
+    const cf=item.confidence||{};
+    h+=`<div class="iblock"><div class="ibh">ITEM ${items.length>1?ii+1:''}</div>
+      ${comboRow('Item name','in'+ii,item.item_name||'',cf.item_name,itemNames)}
+      ${catSel('ic'+ii,item.category||'PC',cf.category)}
+      ${frow('Qty','iq'+ii,item.qty||1,cf.qty,'number')}
+      ${frow('Unit price','ip'+ii,item.unit_price||0,cf.unit_price,'number')}
+      ${currSel('icc'+ii,item.currency||'INR')}
+    </div>`;
+  });
+  document.getElementById('fed').innerHTML=h;
+}
+function navR(d){const p=bills.filter(b=>b.status==='pending');const n=curR+d;if(n>=0&&n<p.length)showAt(n);}
+
+// ── Category manager ───────────────────────────────────────────────────────
+function renderCatList(){
+  document.getElementById('cat-list').innerHTML=CATS.map((cat,i)=>`
+    <div class="cat-row">
+      <span class="cat-code">${cat.c}</span>
+      <span class="cat-name">${cat.l}</span>
+      ${i>=DEFAULT_CATS.length?`<button class="btn btn-rd btn-sm" style="padding:1px 6px" onclick="removeCat(${i})">✕</button>`:'<span style="font-size:10px;color:var(--mu)">built-in</span>'}
+    </div>`).join('');
+}
+function addCategory(){
+  const code=document.getElementById('new-cat-code').value.trim().toUpperCase();
+  const name=document.getElementById('new-cat-name').value.trim();
+  if(!code||!name){toast('Enter both code and name','error');return;}
+  if(code.length>6){toast('Code max 6 characters','error');return;}
+  if(CATS.find(c=>c.c===code)){toast('Category code already exists','error');return;}
+  CATS.push({c:code,l:name});
+  if(!catSeq[code])catSeq[code]=1;
+  saveCats();localStorage.setItem('kc_seq',JSON.stringify(catSeq));
+  document.getElementById('new-cat-code').value='';
+  document.getElementById('new-cat-name').value='';
+  renderCatList();
+  toast(`Category ${code} added`,'success');
+}
+function removeCat(i){
+  if(!confirm(`Remove category "${CATS[i].c} — ${CATS[i].l}"?`))return;
+  CATS.splice(i,1);saveCats();renderCatList();
+  toast('Category removed','warn');
+}
+
+// ── Duplicate side-by-side comparison ─────────────────────────────────────
+function showDupComparison(){
+  const pending=bills.filter(b=>b.status==='pending');
+  const bill=pending[curR];
+  if(!bill._dupData)return;
+  const old=bill._dupData;
+  const newEntry={
+    inv_no:document.getElementById('hin').value.trim(),
+    date:document.getElementById('hd').value,
+    vendor:document.getElementById('hv').value.trim(),
+    item:document.getElementById('in0')?.value||'',
+    category:document.getElementById('ic0')?.value||'',
+    qty:String(document.getElementById('iq0')?.value||''),
+    unit_price:String(document.getElementById('ip0')?.value||''),
+    currency:document.getElementById('icc0')?.value||''
+  };
+  const fields=[['Invoice No.','inv_no'],['Date','date'],['Vendor','vendor'],['Item','item'],['Category','category'],['Qty','qty'],['Unit Price','unit_price'],['Currency','currency']];
+  const renderCol=(entry,vs)=>fields.map(([lbl,key])=>{
+    const isDiff=String(entry[key]||'').trim()!==String(vs[key]||'').trim();
+    return `<div class="dup-field"><div class="dup-lbl">${lbl}</div><div class="dup-val${isDiff?' diff':''}">${entry[key]||'—'}</div></div>`;
+  }).join('');
+  document.getElementById('dup-old-content').innerHTML=renderCol(old,newEntry);
+  document.getElementById('dup-new-content').innerHTML=renderCol(newEntry,old);
+  openMod('mod-dup');
+}
+
+// ── Approve ────────────────────────────────────────────────────────────────
+async function doApprove(forceBypassDup=false){
+  const pending=bills.filter(b=>b.status==='pending');
+  const bill=pending[curR];const bi=bills.indexOf(bill);
+  const vendor=document.getElementById('hv').value.trim();
+  const inv_no=document.getElementById('hin').value.trim();
+  const inv_date=document.getElementById('hd').value;
+  if(!vendor&&!inv_no){document.getElementById('amsg').textContent='Fill in vendor and invoice number';return;}
+  // If duplicate detected and not force-bypassed — show comparison
+  if(bill._dupData&&!forceBypassDup){showDupComparison();return;}
+  const items=bill.items||[{}];
+  const btn=document.getElementById('appbtn');
+  btn.disabled=true;
+  try{
+    // Step 1: Upload bill to Google Drive
+    let driveUrl='';
+    if(SURL){
+      btn.innerHTML='<span style="animation:sp 1s linear infinite;display:inline-block">↻</span> Uploading to Drive...';
+      try{
+        let b64=bill.fileB64;
+        if(!b64&&bill._ref) b64=await toB64(bill._ref.file);
+        if(b64){
+          const mime=bill.fileType||'application/octet-stream';
+          const dr=await shCall({action:'save_to_drive',fileName:bill.fileName,fileData:b64,mimeType:mime,vendor});
+          driveUrl=dr.url||'';
+          if(driveUrl) toast(dr.existed?'Already in Drive — linked':'Saved to Drive','success');
+        }
+      }catch(e){toast('Drive upload failed — Sheets only','warn');}
+    }
+    // Step 2: Save to Sheets
+    btn.innerHTML='<span style="animation:sp 1s linear infinite;display:inline-block">↻</span> Saving to Sheets...';
+    for(let ii=0;ii<items.length;ii++){
+      const cat=document.getElementById(`ic${ii}`)?.value||'PC';
+      const name=document.getElementById(`in${ii}`)?.value||'';
+      const qty=parseInt(document.getElementById(`iq${ii}`)?.value)||1;
+      const price=parseFloat(document.getElementById(`ip${ii}`)?.value)||0;
+      const curr=document.getElementById(`icc${ii}`)?.value||'INR';
+
+      if (cat === 'MSC') {
+        // MSC → goes to Miscellaneous Items sheet, no asset ID, no component rows
+        const miscEntry=[
+          '',           // Item ID — left blank, auto-numbered in sheet
+          name,         // Item Name
+          'Misc',       // Category
+          '',           // Sub-type
+          vendor,       // Vendor
+          inv_no,       // Invoice / Ref
+          inv_date,     // Date Received
+          qty,          // Qty
+          price,        // Unit Price
+          curr,         // Currency
+          'In stock',   // Status
+          '',           // Linked Device
+          '',           // Location
+          `From invoice ${inv_no} · ${bill.fileName}` // Notes
+        ];
+        await shCall({action:'add_invoice',entry:{vendor,inv_no,inv_date,item_name:name,category:cat,qty,unit_price:price,total:Math.round(price*qty),currency:curr,id_range:'Misc — see Misc Items sheet',source:bill.fileName,drive_url:driveUrl}});
+        await shCall({action:'add_misc',entry:miscEntry});
+        toast(`"${name}" saved to Miscellaneous Items sheet`,'success');
+      } else {
+        // All other categories → Component Register with asset IDs
+        const start=catSeq[cat]||1;
+        const idRange=qty===1?`${cat}-${String(start).padStart(3,'0')}`:`${cat}-${String(start).padStart(3,'0')} → ${cat}-${String(start+qty-1).padStart(3,'0')}`;
+        await shCall({action:'add_invoice',entry:{vendor,inv_no,inv_date,item_name:name,category:cat,qty,unit_price:price,total:Math.round(price*qty),currency:curr,id_range:idRange,source:bill.fileName,drive_url:driveUrl}});
+        const comps=[];
+        for(let i=0;i<qty;i++)comps.push({id:`${cat}-${String(start+i).padStart(3,'0')}`,category:cat,name,vendor,inv_no,date:inv_date,unit_price:price,currency:curr});
+        await shCall({action:'add_components',components:comps});
+        catSeq[cat]=(catSeq[cat]||1)+qty;
+      }
+    }
+    localStorage.setItem('kc_seq',JSON.stringify(catSeq));
+    bills[bi].status='approved';
+    const fi=files.findIndex(f=>f.file.name===bill.fileName);
+    if(fi>=0){files[fi].status='done';renderQ();}
+    synced++;
+    await loadAll();
+    toast('Approved — saved to Sheets'+(driveUrl?' + Drive':''),'success');
+  }catch(err){toast('Failed: '+err.message,'error');}
+  btn.disabled=false;
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Approve & save to Sheets';
+  updateStats();
+  setTimeout(()=>{const np=bills.filter(b=>b.status==='pending');if(!np.length){renderReview();return;}showAt(Math.min(curR,np.length-1));document.getElementById('rt').textContent=np.length;},400);
+}
+function doSkip(){const p=bills.filter(b=>b.status==='pending');bills[bills.indexOf(p[curR])].status='skipped';const np=bills.filter(b=>b.status==='pending');if(!np.length){renderReview();return;}showAt(Math.min(curR,np.length-1));document.getElementById('rt').textContent=np.length;updateStats();}
+
+// ── Assemble device ────────────────────────────────────────────────────────
+// ── SKU System ─────────────────────────────────────────────────────────────
+// SKU_SLOTS: each slot = {name, catCode, options:[{label,code,notPresent}]}
+// Stored in localStorage so user can define/edit at any time
+const DEFAULT_SKU_SLOTS=[
+  {name:'Radar',catCode:'RDR',options:[
+    {label:'Joybien',code:'J',notPresent:false},
+    {label:'Minewsemi',code:'M',notPresent:false}
+  ]},
+  {name:'PC / SBC',catCode:'PC',options:[
+    {label:'GMKtec G1',code:'G1',notPresent:false},
+    {label:'GMKtec G2',code:'G2',notPresent:false},
+    {label:'Raspberry Pi 4',code:'R4',notPresent:false}
+  ]},
+  {name:'WiFi Hotspot',catCode:'NET',options:[
+    {label:'eDup E1',code:'E1',notPresent:false},
+    {label:'Not present',code:'XX',notPresent:true}
+  ]},
+  {name:'WiFi Client',catCode:'NET',options:[
+    {label:'TP-Link T200',code:'T200',notPresent:false},
+    {label:'Not present',code:'XX',notPresent:true}
+  ]}
+];
+
+let SKU_SLOTS=JSON.parse(localStorage.getItem('kc_sku_slots')||JSON.stringify(DEFAULT_SKU_SLOTS));
+function saveSKUSlots(){localStorage.setItem('kc_sku_slots',JSON.stringify(SKU_SLOTS));}
+
+// Build the SKU string from current selections
+function buildSKU(){
+  return SKU_SLOTS.map((slot,i)=>{
+    const sel=document.getElementById(`sku-sel-${i}`);
+    return sel?sel.value:'';
+  }).filter(Boolean).join('');
+}
+
+// Update the preview as user picks options
+function updID(){
+  const parts=SKU_SLOTS.map((slot,i)=>{
+    const sel=document.getElementById(`sku-sel-${i}`);
+    if(!sel||!sel.value) return null;
+    const opt=slot.options.find(o=>o.code===sel.value);
+    return {slot:slot.name,code:sel.value,label:opt?opt.label:sel.value,notPresent:opt?opt.notPresent:false};
+  }).filter(Boolean);
+
+  const sku=parts.map(p=>p.code).join('');
+  const prev=document.getElementById('m-id-prev');
+  const partsEl=document.getElementById('sku-preview-parts');
+
+  if(!sku){
+    prev.textContent='— select components below —';
+    prev.style.color='var(--mu)';
+    if(partsEl)partsEl.innerHTML='';
+    return;
+  }
+  prev.textContent=sku;
+  prev.style.color='var(--ac)';
+
+  if(partsEl){
+    partsEl.innerHTML=parts.map(p=>`
+      <span style="background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:2px 8px;font-size:11px;font-family:var(--mono)">
+        <span style="color:var(--mu);font-size:9px">${p.slot}: </span>
+        <span style="color:${p.notPresent?'var(--mu)':'var(--tx)'}">${p.code}</span>
+        <span style="color:var(--mu);font-size:10px"> ${p.label}</span>
+      </span>`).join('<span style="color:var(--mu);font-size:14px;font-family:var(--mono)">+</span>');
+  }
+}
+
+// Build the slot selector UI inside the modal
+function buildSlotSelectors(){
+  const wrap=document.getElementById('asm-slot-selectors');
+  if(!wrap)return;
+  // Get previously used SKUs from product register for quick-pick
+  const usedSKUs=[...new Set(SH.prod.map(r=>String(r[0]||'')).filter(Boolean))];
+  let quickPick='';
+  if(usedSKUs.length){
+    quickPick=`<div style="margin-bottom:10px">
+      <div class="mlbl" style="margin-bottom:4px">QUICK PICK — previously used SKUs</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${usedSKUs.map(sku=>`<button class="btn btn-sm" style="font-family:var(--mono);font-size:11px" onclick="applySKU('${sku}')">${sku}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  const slots=SKU_SLOTS.map((slot,i)=>{
+    const opts=slot.options.map(o=>`<option value="${o.code}">${o.code} — ${o.label}${o.notPresent?' (not present)':''}</option>`).join('');
+    // Get inventory components for this slot's category
+    const inv=SH.comp.filter(r=>r[1]===slot.catCode&&r[8]==='Inventory');
+    const compOpts=inv.length
+      ? inv.map(r=>`<option value="${r[0]}">${r[0]}</option>`).join('')
+      : '<option value="" disabled>No inventory</option>';
+    return `<div style="background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:10px 12px;margin-bottom:7px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+        <div style="font-size:10px;font-family:var(--mono);letter-spacing:.5px;color:var(--mu);font-weight:500">${slot.name.toUpperCase()}</div>
+        <span class="badge bg-gr" style="font-size:9px">${slot.catCode}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        <div>
+          <div class="mlbl" style="margin-bottom:3px">Variant code</div>
+          <select class="mi" id="sku-sel-${i}" style="margin:0;font-family:var(--mono)" onchange="updID()">
+            <option value="">— select —</option>
+            ${opts}
+          </select>
+        </div>
+        <div>
+          <div class="mlbl" style="margin-bottom:3px">Component asset ID</div>
+          <select class="mi" id="comp-sel-${i}" style="margin:0;font-family:var(--mono);font-size:11px">
+            <option value="">— none —</option>
+            ${compOpts}
+          </select>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML=quickPick+slots;
+  updID();
+}
+
+// Apply a previously used SKU to the dropdowns
+function applySKU(sku){
+  // Try to match each slot's options against the SKU string
+  let remaining=sku;
+  SKU_SLOTS.forEach((slot,i)=>{
+    const sel=document.getElementById(`sku-sel-${i}`);
+    if(!sel)return;
+    // Find longest matching option code at current position
+    const match=slot.options.sort((a,b)=>b.code.length-a.code.length)
+      .find(o=>remaining.startsWith(o.code));
+    if(match){sel.value=match.code;remaining=remaining.slice(match.code.length);}
+  });
+  updID();
+}
+
+// Open assemble modal
+function openAsm(){
+  ['m-host','m-loc','m-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const qty=document.getElementById('m-qty');if(qty)qty.value='1';
+  const sta=document.getElementById('m-status');if(sta)sta.value='Inventory';
+  buildSlotSelectors();
+  openMod('mod-asm');
+}
+
+// Save device(s)
+async function saveDevice(){
+  const sku=buildSKU();
+  if(!sku){toast('Select at least one variant code','error');return;}
+  const qty=parseInt(document.getElementById('m-qty')?.value)||1;
+  const hostname=document.getElementById('m-host').value.trim();
+  const location=document.getElementById('m-loc').value.trim();
+  const status=document.getElementById('m-status').value;
+  const notes=document.getElementById('m-notes').value.trim();
+  const assembled=new Date().toISOString().split('T')[0];
+  const deployed=status==='In field'?assembled:'';
+
+  // Gather selected component IDs per slot
+  const slotComps=SKU_SLOTS.map((_,i)=>document.getElementById(`comp-sel-${i}`)?.value||'').filter(Boolean);
+
+  showOv(`Creating ${qty} device${qty>1?'s':''}...`);
+  let created=0;
+  try{
+    for(let q=0;q<qty;q++){
+      const id=qty===1?sku:`${sku}-${String(q+1).padStart(3,'0')}`;
+      if(SH.prod.find(r=>r[0]===id)){toast(`${id} already exists — skipped`,'warn');continue;}
+      const host=qty===1?hostname:(hostname?`${hostname}-${String(q+1).padStart(2,'0')}`:'');
+      const device={id,hostname:host,status,location,assembled,deployed,
+        pc:slotComps[1]||'',radar:slotComps[0]||'',wifi:slotComps[2]||'',
+        psu:slotComps[3]||'',other:'',notes};
+      await shCall({action:'add_product',product:device});
+      // Update component statuses
+      for(const cid of slotComps){
+        const ci=SH.comp.findIndex(r=>r[0]===cid);
+        if(ci>=0){
+          await shCall({action:'update_cell',sheet:'Component Register',row:SH.comp_start+ci,col:9,value:status==='Inventory'?'Inventory':'In field'});
+          await shCall({action:'update_cell',sheet:'Component Register',row:SH.comp_start+ci,col:10,value:id});
+        }
+      }
+      created++;
+    }
+    await loadAll();
+    toast(`${created} device${created>1?'s':''} created`,'success');
+  }catch(e){toast('Failed: '+e.message,'error');}
+  hideOv();
+  closeMod('mod-asm');
+}
+
+// ── SKU Code Manager UI ────────────────────────────────────────────────────
+function renderSKUPanel(){
+  renderSKUManager(); // reuse same rendering logic but target sku-panel-slots
+  const wrap=document.getElementById('sku-panel-slots');
+  if(!wrap)return;
+  // Copy from sku-slots-wrap if it exists
+  const mgr=document.getElementById('sku-slots-wrap');
+  if(mgr)wrap.innerHTML=mgr.innerHTML;
+  else{
+    // Render directly into panel
+    wrap.innerHTML=buildSKUEditorHTML();
+  }
+  updateSKULivePreview();
+  renderSKUReference();
+}
+
+function renderSKUReference(){
+  // Compact badges
+  const compact=document.getElementById('sku-ref-compact');
+  if(compact){
+    compact.innerHTML=SKU_SLOTS.map(slot=>`
+      <span style="background:var(--sf2);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:11px">
+        <span style="color:var(--mu);font-size:9px">[${slot.name.toUpperCase()}] </span>
+        ${slot.options.map(o=>`<span style="color:${o.notPresent?'var(--mu)':'var(--ac)'}"><strong>${o.code}</strong>=<span style="font-family:var(--sans);font-size:10px;color:var(--mu2)">${o.label}</span></span>`).join(' <span style="color:var(--mu)">·</span> ')}
+      </span>`).join('');
+  }
+  // Full reference table
+  const full=document.getElementById('sku-ref-full');
+  if(full){
+    const exampleSKU=SKU_SLOTS.map(s=>s.options[0]?.code||'').join('');
+    full.innerHTML=`
+      <div style="font-size:11px;color:var(--mu2);margin-bottom:10px">
+        Example: <span style="font-family:var(--mono);color:var(--ac);font-weight:500">${exampleSKU}</span> =
+        ${SKU_SLOTS.map(s=>`<span style="color:var(--mu)">${s.name}:</span> <span style="font-family:var(--mono);color:var(--ac)">${s.options[0]?.code}</span> (${s.options[0]?.label})`).join(' + ')}
+      </div>
+      ${SKU_SLOTS.map(slot=>`
+        <div style="margin-bottom:10px">
+          <div style="font-size:9px;font-family:var(--mono);letter-spacing:1px;color:var(--mu);margin-bottom:5px;font-weight:500">SLOT: ${slot.name.toUpperCase()} [${slot.catCode}]</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            ${slot.options.map(o=>`
+              <div style="display:flex;align-items:center;gap:10px;background:var(--sf2);border-radius:5px;padding:5px 10px">
+                <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${o.notPresent?'var(--mu)':'var(--ac)'};min-width:50px">${o.code}</span>
+                <span style="font-size:12px;color:var(--tx)">${o.label}</span>
+                ${o.notPresent?'<span style="font-size:10px;color:var(--mu);font-family:var(--mono)">(not present)</span>':''}
+              </div>`).join('')}
+          </div>
+        </div>`).join('')}`;
+  }
+}
+
+function buildSKUEditorHTML(){
+  return SKU_SLOTS.map((slot,si)=>`
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--mu);letter-spacing:1px">SLOT ${si+1}</div>
+        <input class="mi" value="${slot.name}" id="sname-${si}" placeholder="Slot name e.g. Radar"
+          style="margin:0;flex:1;min-width:120px;font-weight:500" oninput="updateSKULivePreview()">
+        <select class="mi" id="scat-${si}" style="margin:0;width:90px">
+          ${CATS.map(c=>`<option value="${c.c}"${c.c===slot.catCode?' selected':''}>${c.c}</option>`).join('')}
+        </select>
+        <button class="btn btn-rd btn-sm" onclick="removeSlot(${si});renderSKUPanel()">Remove slot</button>
+      </div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--mu);margin-bottom:8px;letter-spacing:.5px">
+        OPTIONS — one code per hardware variant
+      </div>
+      <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:7px;padding:8px;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:90px 1fr auto auto;gap:6px;margin-bottom:5px;padding:0 4px">
+          <div style="font-size:9px;font-family:var(--mono);color:var(--mu)">CODE</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--mu)">LABEL</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--mu)">NOT PRESENT?</div>
+          <div></div>
+        </div>
+        ${slot.options.map((o,oi)=>`
+          <div style="display:grid;grid-template-columns:90px 1fr auto auto;gap:6px;margin-bottom:5px;align-items:center">
+            <input class="mi" value="${o.code}" id="ocode-${si}-${oi}" placeholder="e.g. J"
+              style="margin:0;font-family:var(--mono);font-weight:500;color:var(--ac)" oninput="updateSKULivePreview()">
+            <input class="mi" value="${o.label}" id="olbl-${si}-${oi}" placeholder="e.g. Joybien"
+              style="margin:0" oninput="updateSKULivePreview()">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mu2);white-space:nowrap;cursor:pointer">
+              <input type="checkbox" ${o.notPresent?'checked':''} id="onp-${si}-${oi}" style="cursor:pointer"> Not present
+            </label>
+            <button class="btn btn-rd btn-sm" style="padding:2px 6px" onclick="removeOpt(${si},${oi});renderSKUPanel()">✕</button>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-sm" style="font-size:11px" onclick="addOpt(${si});renderSKUPanel()">
+        + Add option to this slot
+      </button>
+    </div>`).join('');
+}
+
+function updateSKULivePreview(){
+  // Build preview SKU using first option of each slot (or current editor values)
+  const parts=SKU_SLOTS.map((slot,si)=>{
+    const code=document.getElementById(`ocode-${si}-0`)?.value||slot.options[0]?.code||'?';
+    const lbl=document.getElementById(`olbl-${si}-0`)?.value||slot.options[0]?.label||'';
+    const name=document.getElementById(`sname-${si}`)?.value||slot.name;
+    return {code,lbl,name};
+  });
+  const sku=parts.map(p=>p.code).join('');
+  const el=document.getElementById('sku-live-preview');
+  const el2=document.getElementById('sku-live-breakdown');
+  if(el)el.textContent=sku||'—';
+  if(el2)el2.innerHTML=parts.map(p=>`<span style="margin-right:12px"><span style="color:var(--mu)">${p.name}:</span> <span style="font-family:var(--mono);color:var(--ac)">${p.code}</span> <span style="color:var(--mu2)">(${p.lbl})</span></span>`).join('');
+}
+
+function saveSKUFromPanel(){
+  // Read all values from panel editor and save
+  SKU_SLOTS=SKU_SLOTS.map((slot,si)=>({
+    name:document.getElementById(`sname-${si}`)?.value||slot.name,
+    catCode:document.getElementById(`scat-${si}`)?.value||slot.catCode,
+    options:slot.options.map((o,oi)=>({
+      code:document.getElementById(`ocode-${si}-${oi}`)?.value||o.code,
+      label:document.getElementById(`olbl-${si}-${oi}`)?.value||o.label,
+      notPresent:document.getElementById(`onp-${si}-${oi}`)?.checked||false
+    }))
+  }));
+  saveSKUSlots();
+  toast('SKU codes saved — ready to use in Assemble device','success');
+  updateSKULivePreview();
+}
+
+function resetSKUDefaults(){
+  if(!confirm('Reset all SKU codes to defaults? Your custom codes will be lost.'))return;
+  SKU_SLOTS=JSON.parse(JSON.stringify(DEFAULT_SKU_SLOTS));
+  saveSKUSlots();
+  renderSKUPanel();
+  toast('Reset to defaults','warn');
+}
+
+function renderSKUManager(){
+  const wrap=document.getElementById('sku-slots-wrap');
+  if(!wrap)return;
+  wrap.innerHTML=buildSKUEditorHTML();
+  updateSKULivePreview();
+}
+
+function renderSKUManager(){
+  const wrap=document.getElementById('sku-slots-wrap');
+  wrap.innerHTML=SKU_SLOTS.map((slot,si)=>`
+    <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <input class="mi" value="${slot.name}" id="sname-${si}" placeholder="Slot name" style="margin:0;flex:1;font-weight:500">
+        <select class="mi" id="scat-${si}" style="margin:0;width:90px">
+          ${CATS.map(c=>`<option value="${c.c}"${c.c===slot.catCode?' selected':''}>${c.c}</option>`).join('')}
+        </select>
+        <button class="btn btn-rd btn-sm" onclick="removeSlot(${si})">Remove slot</button>
+      </div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--mu);margin-bottom:6px;letter-spacing:.5px">OPTIONS</div>
+      <div id="sopts-${si}">
+        ${slot.options.map((o,oi)=>`
+          <div style="display:flex;gap:6px;margin-bottom:5px;align-items:center">
+            <input class="mi" value="${o.code}" id="ocode-${si}-${oi}" placeholder="Code e.g. J" style="margin:0;width:80px;font-family:var(--mono)">
+            <input class="mi" value="${o.label}" id="olbl-${si}-${oi}" placeholder="Label e.g. Joybien" style="margin:0;flex:1">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mu2);white-space:nowrap">
+              <input type="checkbox" ${o.notPresent?'checked':''} id="onp-${si}-${oi}"> Not present
+            </label>
+            <button class="btn btn-rd btn-sm" style="padding:2px 6px" onclick="removeOpt(${si},${oi})">✕</button>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-sm" style="margin-top:5px;font-size:11px" onclick="addOpt(${si})">+ Add option</button>
+    </div>`).join('')+
+  `<button class="btn btn-ac btn-sm" onclick="addSlot()" style="margin-top:4px">+ Add slot</button>`;
+}
+
+function saveSKUCodes(){
+  SKU_SLOTS=SKU_SLOTS.map((slot,si)=>({
+    name:document.getElementById(`sname-${si}`)?.value||slot.name,
+    catCode:document.getElementById(`scat-${si}`)?.value||slot.catCode,
+    options:slot.options.map((o,oi)=>({
+      code:document.getElementById(`ocode-${si}-${oi}`)?.value||o.code,
+      label:document.getElementById(`olbl-${si}-${oi}`)?.value||o.label,
+      notPresent:document.getElementById(`onp-${si}-${oi}`)?.checked||false
+    }))
+  }));
+  saveSKUSlots();
+  toast('SKU codes saved','success');
+}
+
+function addSlot(){
+  SKU_SLOTS.push({name:'New slot',catCode:'PC',options:[{label:'Option A',code:'A',notPresent:false}]});
+  renderSKUManager();
+}
+function removeSlot(si){
+  if(SKU_SLOTS.length<=1){toast('Need at least one slot','error');return;}
+  SKU_SLOTS.splice(si,1);renderSKUManager();
+}
+function addOpt(si){
+  SKU_SLOTS[si].options.push({label:'New option',code:'X',notPresent:false});
+  renderSKUManager();
+}
+function removeOpt(si,oi){
+  if(SKU_SLOTS[si].options.length<=1){toast('Need at least one option','error');return;}
+  SKU_SLOTS[si].options.splice(oi,1);renderSKUManager();
+}
+
+// ── Sheets ─────────────────────────────────────────────────────────────────
+// ── Miscellaneous Items ───────────────────────────────────────────────────
+let _miscSeq=parseInt(localStorage.getItem('kc_misc_seq')||'1');
+
+function updateMiscStats(){
+  document.getElementById('misc-total').textContent=SH.misc.length;
+  document.getElementById('misc-instock').textContent=SH.misc.filter(r=>r[10]==='In stock').length;
+  document.getElementById('misc-inuse').textContent=SH.misc.filter(r=>r[10]==='In use').length;
+}
+
+function renderMisc(){
+  const srch=(document.getElementById('misc-search')?.value||'').toLowerCase();
+  const cat=document.getElementById('misc-cat')?.value||'';
+  const sta=document.getElementById('misc-status')?.value||'';
+  let data=SH.misc.map((r,i)=>({r,i,shRow:SH.misc_start+i}))
+    .filter(({r})=>{
+      const s=`${r[0]} ${r[1]} ${r[2]} ${r[4]}`.toLowerCase();
+      return(!srch||s.includes(srch))&&(!cat||r[2]===cat)&&(!sta||r[10]===sta);
+    });
+  data=applySortAndFilter(data.map(x=>x.r),'misc')
+    .map((r,idx)=>({r,i:SH.misc.indexOf(r),shRow:SH.misc_start+SH.misc.indexOf(r)}));
+
+  const MSCLS={'In stock':'bg-gn','In use':'bg-am','Depleted':'bg-gr','Damaged':'bg-rd'};
+  document.getElementById('misc-tbody').innerHTML=data.length
+    ? data.map(({r,i,shRow})=>`<tr>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--pu)">${r[0]||''}</td>
+        <td style="font-weight:500">${ec('Miscellaneous Items',shRow,2,r[1])}</td>
+        <td><span class="badge bg-gr" style="font-size:9px">${r[2]||''}</span></td>
+        <td style="color:var(--mu2)">${ec('Miscellaneous Items',shRow,4,r[3])}</td>
+        <td style="color:var(--mu)">${ec('Miscellaneous Items',shRow,5,r[4])}</td>
+        <td style="font-family:var(--mono);font-size:11px">${r[5]||''}</td>
+        <td style="font-family:var(--mono);font-size:11px">${fmtDate(r[6])}</td>
+        <td style="text-align:center">${ec('Miscellaneous Items',shRow,8,r[7],'center')}</td>
+        <td style="text-align:right;font-family:var(--mono)">${fmtNum(r[8])}</td>
+        <td style="font-family:var(--mono);font-size:10px">${r[9]||''}</td>
+        <td>${statusSel('Miscellaneous Items',shRow,11,i,r[10]||'In stock')}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--ac)">${ec('Miscellaneous Items',shRow,12,r[11]||'')}</td>
+        <td>${ec('Miscellaneous Items',shRow,14,r[13]||'')}</td>
+        <td><button class="btn btn-rd btn-sm" style="padding:1px 6px" onclick="delMiscRow(${i},${shRow})">✕</button></td>
+      </tr>`).join('')
+    : `<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--mu)">No items yet — click + Add item</td></tr>`;
+
+  document.getElementById('misc-count').textContent=`Showing ${data.length} of ${SH.misc.length} items`;
+  updateMiscStats();
+}
+
+function openAddMisc(){
+  document.getElementById('misc-date').value=new Date().toISOString().split('T')[0];
+  ['misc-name','misc-subtype','misc-vendor','misc-inv','misc-device','misc-loc','misc-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('misc-qty').value='1';
+  document.getElementById('misc-price').value='0';
+  openMod('mod-misc');
+}
+
+async function saveMiscItem(){
+  const name=document.getElementById('misc-name').value.trim();
+  if(!name){toast('Item name is required','error');return;}
+  const id='MSC-'+String(_miscSeq).padStart(3,'0');
+  const entry=[
+    id,
+    name,
+    document.getElementById('misc-catsel').value,
+    document.getElementById('misc-subtype').value.trim(),
+    document.getElementById('misc-vendor').value.trim(),
+    document.getElementById('misc-inv').value.trim(),
+    document.getElementById('misc-date').value,
+    parseInt(document.getElementById('misc-qty').value)||1,
+    parseFloat(document.getElementById('misc-price').value)||0,
+    document.getElementById('misc-curr').value,
+    document.getElementById('misc-statussel').value,
+    document.getElementById('misc-device').value.trim(),
+    document.getElementById('misc-loc').value.trim(),
+    document.getElementById('misc-notes').value.trim()
+  ];
+  try{
+    await shCall({action:'add_misc',entry});
+    _miscSeq++;
+    localStorage.setItem('kc_misc_seq',String(_miscSeq));
+    SH.misc.push(entry);
+    closeMod('mod-misc');
+    renderMisc();
+    toast('Item added to Miscellaneous Items sheet','success');
+  }catch(e){toast('Failed: '+e.message,'error');}
+}
+
+async function delMiscRow(localIdx,shRow){
+  if(!confirm('Delete this item from Sheets?'))return;
+  try{
+    await shCall({action:'delete_row',sheet:'Miscellaneous Items',row:shRow});
+    SH.misc.splice(localIdx,1);
+    renderMisc();
+    toast('Item deleted','success');
+  }catch(e){toast('Delete failed','error');}
+}
+
+// ── Bulk Correct ──────────────────────────────────────────────────────────
+let _fixSel=new Set();
+
+function fixSearch(){
+  const inv=(document.getElementById('fix-inv')?.value||'').trim().toLowerCase();
+  const cat=document.getElementById('fix-cat-filter')?.value||'';
+  if(!inv&&!cat){
+    document.getElementById('fix-results').style.display='none';
+    document.getElementById('fix-actions').style.display='none';
+    document.getElementById('fix-empty').style.display='block';
+    document.getElementById('fix-count').textContent='';
+    return;
+  }
+  const matches=SH.comp.map((r,i)=>({r,i,shRow:SH.comp_start+i})).filter(({r})=>{
+    const invMatch=!inv||String(r[4]||'').toLowerCase().includes(inv)||String(r[0]||'').toLowerCase().includes(inv);
+    const catMatch=!cat||r[1]===cat;
+    return invMatch&&catMatch;
+  });
+  document.getElementById('fix-count').textContent=`Found ${matches.length} component row${matches.length!==1?'s':''} in Sheets`;
+  document.getElementById('fix-results').style.display=matches.length?'block':'none';
+  document.getElementById('fix-actions').style.display=matches.length?'block':'none';
+  document.getElementById('fix-empty').style.display=matches.length?'none':'block';
+  const catSel=document.getElementById('fix-new-cat');
+  catSel.innerHTML='<option value="">— keep existing —</option>'+CATS.map(c=>`<option value="${c.c}">${c.c} — ${c.l}</option>`).join('');
+  _fixSel=new Set(matches.map(m=>m.i));
+  document.getElementById('fix-row-count').textContent=`${matches.length} rows shown · all selected`;
+  document.getElementById('fix-tbody').innerHTML=matches.map(({r,i,shRow})=>`<tr class="selected">
+    <td class="cb-cell"><input type="checkbox" checked data-idx="${i}" onchange="fixSel(${i},this.checked)"></td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--ac)">${r[0]}</td>
+    <td>${catBadge(r[1])}</td>
+    <td style="font-size:11px">${r[2]||''}</td>
+    <td style="color:var(--mu);font-size:11px">${r[3]||''}</td>
+    <td style="font-family:var(--mono);font-size:11px">${r[4]||''}</td>
+    <td><span class="badge ${SCLS[r[8]]||'bg-gr'}">${r[8]||''}</span></td>
+  </tr>`).join('');
+}
+function fixSel(i,checked){if(checked)_fixSel.add(i);else _fixSel.delete(i);}
+function fixSelAll(checked){
+  _fixSel.clear();
+  document.querySelectorAll('#fix-tbody input[type=checkbox]').forEach(cb=>{
+    cb.checked=checked;
+    if(checked)_fixSel.add(parseInt(cb.dataset.idx));
+  });
+}
+async function applyBulkFix(){
+  const newCat=document.getElementById('fix-new-cat').value;
+  const newVendor=document.getElementById('fix-new-vendor').value.trim();
+  const newItem=document.getElementById('fix-new-item').value.trim();
+  if(!newCat&&!newVendor&&!newItem){toast('Enter at least one field to change','error');return;}
+  if(!_fixSel.size){toast('No rows selected','error');return;}
+  if(!confirm(`Apply changes to ${_fixSel.size} component rows in Google Sheets?\nThis cannot be undone.`))return;
+  const prog=document.getElementById('fix-progress');
+  let done=0;
+  for(const i of _fixSel){
+    const shRow=SH.comp_start+i;
+    showOv(`Updating ${done+1} of ${_fixSel.size}...`);
+    try{
+      if(newCat){
+        const oldId=String(SH.comp[i][0]||'');
+        const numPart=oldId.replace(/^[A-Z]+-/,'');
+        const newId=newCat+'-'+numPart;
+        await shCall({action:'update_cell',sheet:'Component Register',row:shRow,col:1,value:newId});
+        await shCall({action:'update_cell',sheet:'Component Register',row:shRow,col:2,value:newCat});
+        SH.comp[i][0]=newId; SH.comp[i][1]=newCat;
+      }
+      if(newVendor){await shCall({action:'update_cell',sheet:'Component Register',row:shRow,col:4,value:newVendor});SH.comp[i][3]=newVendor;}
+      if(newItem){await shCall({action:'update_cell',sheet:'Component Register',row:shRow,col:3,value:newItem});SH.comp[i][2]=newItem;}
+    }catch(e){console.error('fix row error',i,e);}
+    done++;
+    prog.textContent=`${done}/${_fixSel.size} updated`;
+  }
+  hideOv();
+  prog.textContent=`✓ ${done} rows corrected`;
+  fixSearch();renderComps();
+  toast(`${done} rows corrected in Sheets`,'success');
+}
+
+async function shCall(payload){const r=await fetch(SURL,{method:'POST',body:JSON.stringify(payload)});const d=await r.json();if(d.status==='error')throw new Error(d.message);return d;}
+async function testConn(){
+  const url=document.getElementById('surl-inp').value.trim();
+  if(!url){toast('Paste the URL first','error');return;}
+  document.getElementById('connres').textContent='Testing...';
+  try{const r=await fetch(url,{method:'POST',body:JSON.stringify({action:'ping'})});const d=await r.json();
+    if(d.status==='connected'||d.status==='success'){SURL=url;localStorage.setItem('kc_url',url);setSS(true);document.getElementById('connres').textContent='Connected: '+d.sheet;toast('Connected!','success');loadAll();}
+    else throw new Error(d.message);
+  }catch(err){document.getElementById('connres').textContent='Failed: '+err.message;setSS(false);}
+}
+function saveURL(){const u=document.getElementById('surl-inp').value.trim();if(u){SURL=u;localStorage.setItem('kc_url',u);}}
+function setSS(ok){document.getElementById('sdot').className='sdot'+(ok?' on':'');document.getElementById('slbl').textContent=ok?'Sheets connected':'Not connected';if(ok&&SURL)document.getElementById('sshort').textContent=SURL.replace('https://script.google.com/macros/s/','').substring(0,22)+'...';}
+async function clearAll(){if(!confirm('Wipe ALL data in Sheets and reset ID counters to 001?'))return;catSeq=Object.fromEntries(CATS.map(c=>[c.c,1]));localStorage.setItem('kc_seq',JSON.stringify(catSeq));files=[];bills=[];synced=0;renderQ();if(SURL){try{await shCall({action:'clear_all'});SH={inv:[],comp:[],prod:[],misc:[],inv_start:7,comp_start:8,prod_start:8,misc_start:6};renderInv();renderComps();renderProds();renderMisc();updateStats();updateMiscStats();toast('All data cleared','success');}catch(e){toast('Failed: '+e.message,'error');}}else toast('Local reset done','warn');}
+function cpScript(){navigator.clipboard.writeText(document.getElementById('gscript').textContent);toast('Apps Script copied','success');}
+function openMod(id){document.getElementById(id).classList.add('open');}
+function closeMod(id){document.getElementById(id).classList.remove('open');}
+function showOv(msg){document.getElementById('ov-msg').textContent=msg;document.getElementById('ov').classList.add('show');}
+function hideOv(){document.getElementById('ov').classList.remove('show');}
+function toast(msg,type){const t=document.getElementById('toast');t.className='toast'+(type?' '+type:'');t.textContent=msg;t.style.display='flex';setTimeout(()=>t.style.display='none',3000);}
+</script>
+</body>
+</html>

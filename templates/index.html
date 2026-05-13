@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bed-Sentry v3 · KuboCare</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060608;--surface:#0d0d12;--card:#111118;
+  --border:#1c1c28;--border2:#252535;--text:#e8e8f0;--muted:#52526a;
+  --on:#ff3b3b;--on-dim:rgba(255,59,59,0.12);--on-glow:rgba(255,59,59,0.3);
+  --off:#00e5a0;--off-dim:rgba(0,229,160,0.10);--off-glow:rgba(0,229,160,0.25);
+  --warn:#ff9800;--info:#38bdf8;--accent:#6366f1;
+  --display:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);
+  display:grid;grid-template-rows:52px 1fr;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);}
+.logo{font-family:var(--display);font-size:1.05rem;font-weight:800;
+  display:flex;align-items:center;gap:9px;}
+.logo-badge{width:24px;height:24px;background:linear-gradient(135deg,var(--accent),#a78bfa);
+  border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;
+  box-shadow:0 0 14px rgba(99,102,241,0.5);}
+.logo em{color:var(--accent);font-style:normal;}
+.hright{display:flex;align-items:center;gap:6px;}
+.chip{display:flex;align-items:center;gap:5px;padding:4px 11px;
+  background:var(--card);border:1px solid var(--border);border-radius:100px;
+  font-size:0.65rem;color:var(--muted);}
+.chip b{color:var(--text);font-weight:500;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--off);
+  box-shadow:0 0 6px var(--off);animation:breathe 2s infinite;}
+.dot.alert{background:var(--on);box-shadow:0 0 8px var(--on);animation:pal 0.8s infinite;}
+.dot.warn{background:var(--warn);box-shadow:0 0 8px var(--warn);}
+@keyframes breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+@keyframes pal{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+
+/* LAYOUT */
+main{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 52px);overflow:hidden;}
+
+/* LEFT */
+.left{display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;
+  padding:14px;overflow:hidden;border-right:1px solid var(--border);}
+
+/* BANNER */
+.banner{position:relative;padding:14px 20px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);
+  display:flex;align-items:center;justify-content:space-between;overflow:hidden;}
+.banner::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 50% 100% at 100% 50%,var(--glow,transparent),transparent);}
+.banner.safe  {border-color:rgba(0,229,160,.25);--glow:var(--off-glow);}
+.banner.info  {border-color:rgba(56,189,248,.3);}
+.banner.warning{border-color:rgba(255,152,0,.3);}
+.banner.alert {border-color:rgba(255,59,59,.35);--glow:var(--on-glow);}
+.banner.critical{border-color:rgba(255,59,59,.5);--glow:var(--on-glow);animation:flash 1s infinite;}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.75}}
+
+.b-left{display:flex;align-items:center;gap:14px;position:relative;}
+.b-icon{font-size:1.8rem;}
+.b-label{font-family:var(--display);font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;}
+.banner.safe .b-label{color:var(--off);text-shadow:0 0 20px var(--off-glow);}
+.banner.info .b-label{color:var(--info);}
+.banner.warning .b-label{color:var(--warn);}
+.banner.alert .b-label,.banner.critical .b-label{color:var(--on);text-shadow:0 0 20px var(--on-glow);}
+.b-sub{font-size:0.55rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+.b-right{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.b-time{font-size:0.62rem;color:var(--muted);}
+.btn-ack{font-family:var(--mono);font-size:0.62rem;font-weight:600;
+  background:var(--on);color:#fff;border:none;padding:5px 12px;
+  border-radius:5px;cursor:pointer;display:none;}
+.banner.alert .btn-ack,.banner.critical .btn-ack{display:block;}
+
+/* MODE BAR */
+.modebar{display:flex;gap:8px;align-items:center;}
+.modeinfo{flex:1;font-size:0.63rem;color:var(--muted);
+  padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px;}
+.modeinfo.draw{color:var(--accent);}
+.modeinfo.assign{color:var(--off);}
+
+/* VIDEO */
+.video-wrap{position:relative;background:#000;border-radius:10px;
+  overflow:hidden;border:1px solid var(--border);min-height:0;}
+#videoFeed{width:100%;height:100%;object-fit:contain;display:block;
+  pointer-events:none;user-select:none;}
+#roiCanvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;}
+#assignOverlay{position:absolute;top:0;left:0;width:100%;height:100%;
+  cursor:crosshair;display:none;}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;}
+.tlbl{font-size:0.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.tinput{font-family:var(--mono);font-size:0.65rem;background:var(--bg);
+  border:1px solid var(--border2);color:var(--text);padding:4px 8px;
+  border-radius:5px;width:85px;outline:none;}
+.tinput:focus{border-color:var(--accent);}
+.cpick{display:flex;gap:3px;}
+.csw{width:12px;height:12px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:all .15s;}
+.csw.active{border-color:var(--text);transform:scale(1.35);}
+.thint{flex:1;color:var(--muted);font-size:0.62rem;}
+.tbadge{font-size:0.56rem;color:var(--muted);background:var(--bg);
+  padding:2px 7px;border-radius:100px;border:1px solid var(--border);}
+.btn{font-family:var(--mono);font-size:0.62rem;font-weight:500;
+  padding:5px 11px;border-radius:5px;border:1px solid transparent;
+  cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent);
+  box-shadow:0 0 12px rgba(99,102,241,.3);}
+.btn-p:hover{background:#5355d4;}
+.btn-p:disabled{background:var(--card);color:var(--muted);border-color:var(--border);
+  cursor:not-allowed;box-shadow:none;}
+.btn-g{background:transparent;color:var(--muted);border-color:var(--border);}
+.btn-g:hover{border-color:var(--border2);color:var(--text);}
+.btn-teal{background:var(--off);color:#000;border-color:var(--off);}
+.btn-teal:hover{filter:brightness(0.9);}
+
+/* RIGHT */
+.right{display:flex;flex-direction:column;background:var(--surface);overflow:hidden;}
+.stats{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sc{padding:12px 14px;border-right:1px solid var(--border);}
+.sc:nth-child(2n){border-right:none;}
+.sc:nth-child(n+3){border-top:1px solid var(--border);}
+.sc-lbl{font-size:0.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.sc-val{font-family:var(--display);font-size:1.4rem;font-weight:700;letter-spacing:-0.8px;line-height:1;}
+.sc-val.on{color:var(--on);text-shadow:0 0 10px var(--on-glow);}
+.sc-val.off{color:var(--off);text-shadow:0 0 10px var(--off-glow);}
+.sc-val.warn{color:var(--warn);}
+
+/* Section header */
+.sh{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sh-t{font-size:0.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+/* Zone list */
+.zone-row{display:flex;align-items:center;gap:8px;padding:8px 14px;
+  border-bottom:1px solid var(--border);}
+.zdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.zname{flex:1;font-size:0.72rem;font-weight:500;}
+.ztag{font-size:0.58rem;color:var(--muted);}
+.zdel{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:0.7rem;padding:2px 5px;border-radius:3px;}
+.zdel:hover{background:var(--on-dim);color:var(--on);}
+
+/* Person cards */
+.pcard{padding:9px 14px;border-bottom:1px solid var(--border);}
+.pcard-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.prole{font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:100px;}
+.prole.patient{background:rgba(0,229,160,0.15);color:var(--off);}
+.prole.nurse{background:rgba(56,189,248,0.15);color:var(--info);}
+.prole.unassigned{background:var(--border);color:var(--muted);}
+.pid{font-size:0.62rem;color:var(--muted);}
+.pstate{font-family:var(--display);font-size:0.9rem;font-weight:700;margin-bottom:5px;}
+.pstate.on{color:var(--off);}
+.pstate.warn{color:var(--warn);}
+.pstate.alert{color:var(--on);}
+.pbtns{display:flex;gap:4px;}
+.pbtn{font-family:var(--mono);font-size:0.56rem;font-weight:600;
+  padding:3px 7px;border-radius:3px;border:none;cursor:pointer;}
+.pbtn-patient{background:var(--off);color:#000;}
+.pbtn-nurse{background:var(--info);color:#000;}
+.pbtn-clear{background:var(--border2);color:var(--muted);}
+.pempty{padding:14px;font-size:0.65rem;color:var(--muted);text-align:center;}
+
+/* Log */
+.log-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.log-scroll{flex:1;overflow-y:auto;}
+.log-scroll::-webkit-scrollbar{width:2px;}
+.log-scroll::-webkit-scrollbar-thumb{background:var(--border2);}
+.lrow{display:flex;gap:8px;padding:7px 14px;
+  border-bottom:1px solid var(--border);animation:lin .2s ease;}
+@keyframes lin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.lpip{width:3px;border-radius:2px;align-self:stretch;min-height:26px;flex-shrink:0;}
+.lpip.critical,.lpip.alert{background:var(--on);box-shadow:0 0 5px var(--on-glow);}
+.lpip.warning{background:var(--warn);}
+.lpip.info{background:var(--info);}
+.lpip.none{background:var(--off);box-shadow:0 0 5px var(--off-glow);}
+.linfo{flex:1;}
+.lzone{font-size:0.6rem;color:var(--muted);}
+.lmsg{font-size:0.68rem;font-weight:500;margin-top:1px;}
+.lts{font-size:0.55rem;color:var(--muted);margin-top:1px;}
+.lempty{padding:28px 14px;text-align:center;color:var(--muted);font-size:0.65rem;}
+
+/* Alert popup */
+#alertPopup{position:fixed;top:16px;left:50%;
+  transform:translateX(-50%) translateY(-130px);
+  background:var(--card);border:2px solid var(--on);border-radius:12px;
+  padding:16px 24px;min-width:320px;text-align:center;
+  transition:transform .4s cubic-bezier(.175,.885,.32,1.275);z-index:2000;
+  box-shadow:0 8px 40px rgba(255,59,59,0.35);}
+#alertPopup.show{transform:translateX(-50%) translateY(0);}
+#alertPopup.warning{border-color:var(--warn);box-shadow:0 8px 40px rgba(255,152,0,0.3);}
+.ap-lv{font-size:0.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--on);margin-bottom:4px;}
+.ap-msg{font-family:var(--display);font-size:1.05rem;font-weight:700;}
+.ap-close{margin-top:10px;font-family:var(--mono);font-size:0.62rem;
+  background:var(--on);color:#fff;border:none;padding:5px 14px;
+  border-radius:5px;cursor:pointer;width:100%;}
+
+/* Assign modal */
+#assignModal{position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  display:none;align-items:center;justify-content:center;z-index:1500;}
+#assignModal.show{display:flex;}
+.amodal{background:var(--card);border:1px solid var(--border2);border-radius:12px;
+  padding:24px;min-width:260px;text-align:center;}
+.amodal-title{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.amodal-sub{font-size:0.65rem;color:var(--muted);margin-bottom:16px;}
+.amodal-btns{display:flex;gap:8px;}
+.amodal-btn{flex:1;font-family:var(--mono);font-size:0.7rem;font-weight:600;
+  padding:9px;border-radius:6px;border:none;cursor:pointer;}
+.amodal-patient{background:var(--off);color:#000;}
+.amodal-nurse{background:var(--info);color:#000;}
+.amodal-cancel{background:var(--border2);color:var(--muted);}
+
+#toast{position:fixed;bottom:18px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--card);border:1px solid var(--border2);color:var(--text);
+  padding:7px 14px;border-radius:7px;font-size:0.67rem;
+  transition:transform .3s cubic-bezier(.175,.885,.32,1.275);
+  z-index:1000;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.success{border-color:var(--off);color:var(--off);}
+#toast.error{border-color:var(--on);color:var(--on);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-badge">🛏</div>
+    Bed<em>-Sentry</em>
+    <span style="font-size:0.65rem;color:var(--muted)">v3</span>
+  </div>
+  <div class="hright">
+    <div class="chip"><div class="dot" id="liveDot"></div> FPS <b id="fpsVal">—</b></div>
+    <div class="chip" id="camChip">CAM —</div>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT PANEL -->
+  <div class="left">
+
+    <!-- Status Banner -->
+    <div class="banner safe" id="banner">
+      <div class="b-left">
+        <div class="b-icon" id="bIcon">🛏️</div>
+        <div>
+          <div class="b-label" id="bLabel">OFF BED</div>
+          <div class="b-sub" id="bSub">Bed Occupancy · KuboCare</div>
+        </div>
+      </div>
+      <div class="b-right">
+        <div class="b-time" id="bTime">—</div>
+        <button class="btn-ack" onclick="acknowledge()">✓ Acknowledge</button>
+      </div>
+    </div>
+
+    <!-- Mode Bar -->
+    <div class="modebar">
+      <button class="btn btn-p" id="btnDraw" onclick="setMode('draw')">✏️ Draw Zone</button>
+
+      <div class="modeinfo draw" id="modeInfo">Draw mode — click corners on video to map bed zone</div>
+    </div>
+
+    <!-- Video -->
+    <div class="video-wrap" id="videoWrap">
+      <img id="videoFeed" src="/stream" alt="Camera">
+      <canvas id="roiCanvas"></canvas>
+
+    </div>
+
+    <!-- Zone Toolbar -->
+    <div class="toolbar">
+      <span class="tlbl">Zone</span>
+      <input type="text" class="tinput" id="zoneName" placeholder="Bed 1">
+      <div class="cpick" id="colorPicker"></div>
+      <span class="thint" id="roiHint">Click corners to draw bed zone</span>
+      <span class="tbadge" id="ptBadge">0 pts</span>
+      <button class="btn btn-g" id="undoBtn">↩</button>
+      <button class="btn btn-g" id="clearBtn">Clear</button>
+      <button class="btn btn-p" id="saveBtn" disabled>Save Zone</button>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="sc"><div class="sc-lbl">Patient</div><div class="sc-val off" id="stPatient">—</div></div>
+      <div class="sc"><div class="sc-lbl">Alert</div><div class="sc-val" id="stAlert">NONE</div></div>
+      <div class="sc"><div class="sc-lbl">Nurse</div><div class="sc-val" id="stNurse">—</div></div>
+      <div class="sc"><div class="sc-lbl">FPS</div><div class="sc-val" id="stFps">—</div></div>
+    </div>
+
+    <!-- Zones -->
+    <div>
+      <div class="sh">
+        <span class="sh-t">Mapped Zones</span>
+        <span class="sh-t" id="zoneCount">0</span>
+      </div>
+      <div id="zoneList"><div class="pempty">No zones. Use ✏️ Draw Zone.</div></div>
+    </div>
+
+
+
+    <!-- Log -->
+    <div class="log-wrap">
+      <div class="sh">
+        <span class="sh-t">Event Log</span>
+        <span class="sh-t" id="logCount">0 events</span>
+      </div>
+      <div class="log-scroll" id="logList">
+        <div class="lempty">Waiting for events…</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Alert Popup -->
+<div id="alertPopup">
+  <div class="ap-lv" id="apLv">ALERT</div>
+  <div class="ap-msg" id="apMsg">—</div>
+  <button class="ap-close" onclick="closePopup()">✓ Acknowledge</button>
+</div>
+
+<!-- Assign Modal -->
+<div id="assignModal">
+  <div class="amodal">
+    <div class="amodal-title" id="amTitle">Assign Track</div>
+    <div class="amodal-sub" id="amSub">Choose role for this person</div>
+    <div class="amodal-btns">
+      <button class="amodal-btn amodal-patient" id="amPatient" onclick="confirmAssign('patient')">🛏 Patient (T1)</button>
+      <button class="amodal-btn amodal-nurse"   id="amNurse"   onclick="confirmAssign('nurse')">👩‍⚕️ Nurse (T2)</button>
+      <button class="amodal-btn amodal-cancel"  onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const NATIVE_W=1280, NATIVE_H=400;
+const COLORS=[
+  {name:'green',hex:'#00e5a0'},{name:'blue',hex:'#38bdf8'},
+  {name:'orange',hex:'#fb923c'},{name:'purple',hex:'#c084fc'},
+  {name:'yellow',hex:'#fbbf24'},{name:'red',hex:'#f87171'},
+];
+const ZONE_HEX={green:'#00e5a0',blue:'#38bdf8',orange:'#fb923c',
+  purple:'#c084fc',yellow:'#fbbf24',red:'#f87171'};
+
+let selectedColor=COLORS[0], zonesData=[], tracksData=[];
+let points=[], nativePoints=[], hoverPt=null, closed=false, editingId=null;
+let currentMode='draw', pendingTrackId=null, popupShown=false;
+
+// ── Color picker ──────────────────────────────────────────────────
+document.getElementById('colorPicker').innerHTML='';
+COLORS.forEach((c,i)=>{
+  const sw=document.createElement('div');
+  sw.className='csw'+(i===0?' active':'');
+  sw.style.background=c.hex;
+  sw.onclick=()=>{
+    selectedColor=c;
+    document.querySelectorAll('.csw').forEach(s=>s.classList.remove('active'));
+    sw.classList.add('active');
+  };
+  document.getElementById('colorPicker').appendChild(sw);
+});
+
+// ── Mode switching ────────────────────────────────────────────────
+const canvas      = document.getElementById('roiCanvas');
+const ctx         = canvas.getContext('2d');
+const assignOvl   = document.getElementById('assignOverlay');
+const modeInfo    = document.getElementById('modeInfo');
+const btnDraw     = document.getElementById('btnDraw');
+const btnAssign   = document.getElementById('btnAssign');
+
+function setMode(mode){
+  currentMode=mode;
+  canvas.style.pointerEvents='auto';
+  if(assignOvl) assignOvl.style.display='none';
+  btnDraw.className='btn btn-p';
+  modeInfo.className='modeinfo draw';
+  modeInfo.textContent='✏️ Draw mode — click corners on video to map bed zone';
+}
+setMode('draw');
+
+// ── Canvas sync ───────────────────────────────────────────────────
+const wrap=document.getElementById('videoWrap');
+const img =document.getElementById('videoFeed');
+
+function syncCanvas(){
+  canvas.width =img.offsetWidth ||wrap.offsetWidth;
+  canvas.height=img.offsetHeight||wrap.offsetHeight;
+  redraw();
+}
+new ResizeObserver(syncCanvas).observe(wrap);
+img.onload=syncCanvas;
+
+function toNative(p){
+  const r=canvas.getBoundingClientRect();
+  return{x:Math.round(p.x/r.width*NATIVE_W),y:Math.round(p.y/r.height*NATIVE_H)};
+}
+function getPos(e){
+  const r=canvas.getBoundingClientRect();
+  return{x:e.clientX-r.left,y:e.clientY-r.top};
+}
+
+function redraw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!points.length) return;
+  const col=selectedColor.hex;
+  const allPts=closed?points:(hoverPt?[...points,hoverPt]:points);
+  if(closed&&points.length>=3){
+    ctx.beginPath();
+    points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.closePath(); ctx.fillStyle=col+'18'; ctx.fill();
+  }
+  ctx.beginPath();
+  allPts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  if(closed) ctx.closePath();
+  ctx.strokeStyle=col; ctx.lineWidth=1.5;
+  ctx.setLineDash(closed?[]:[5,4]);
+  ctx.shadowColor=col; ctx.shadowBlur=closed?10:4;
+  ctx.stroke(); ctx.setLineDash([]); ctx.shadowBlur=0;
+  points.forEach((p,i)=>{
+    ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=8;
+    ctx.fill(); ctx.shadowBlur=0;
+    ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='#000'; ctx.font='bold 8px DM Mono,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(i+1,p.x,p.y);
+  });
+}
+
+canvas.addEventListener('mousemove',e=>{
+  if(closed||!points.length) return;
+  hoverPt=getPos(e); redraw();
+});
+canvas.addEventListener('mouseleave',()=>{hoverPt=null; redraw();});
+canvas.addEventListener('click',e=>{
+  if(closed) return;
+  const p=getPos(e);
+  if(points.length>=3&&Math.hypot(p.x-points[0].x,p.y-points[0].y)<16){
+    closed=true; hoverPt=null; redraw(); updateToolbar(); return;
+  }
+  points.push(p); nativePoints.push(toNative(p));
+  updateToolbar(); redraw();
+});
+
+// ── Assign overlay click ──────────────────────────────────────────
+if(assignOvl) assignOvl.addEventListener('click',e=>{
+  const r=assignOvl.getBoundingClientRect();
+  const nx=Math.round((e.clientX-r.left)/r.width*NATIVE_W);
+  const ny=Math.round((e.clientY-r.top)/r.height*NATIVE_H);
+  let clicked=null;
+  for(const t of tracksData){
+    if(!t.bbox) continue;
+    const [x1,y1,x2,y2]=t.bbox;
+    if(nx>=x1&&nx<=x2&&ny>=y1&&ny<=y2){ clicked=t.track_id; break; }
+  }
+  if(clicked===null){ showToast('Click on a person bounding box','error'); return; }
+  pendingTrackId=clicked;
+  document.getElementById('amTitle').textContent=`Track #${clicked}`;
+  document.getElementById('amSub').textContent='Assign role for this person:';
+  document.getElementById('assignModal').classList.add('show');
+});
+
+function confirmAssign(role){
+  if(pendingTrackId===null) return;
+  assignRole(pendingTrackId, role);
+  closeModal();
+}
+
+function closeModal(){
+  document.getElementById('assignModal').classList.remove('show');
+  pendingTrackId=null;
+}
+
+function assignRole(trackId, role){
+  fetch('/api/assign',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({track_id:trackId,role})})
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.ok) showToast(`✓ Track #${trackId} → ${role.toUpperCase()}`,'success');
+    else     showToast('✗ Assign failed','error');
+  });
+}
+
+function clearRole(trackId){
+  fetch('/api/assign',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({track_id:trackId,role:'clear'})})
+  .then(r=>r.json()).then(d=>d.ok&&showToast('Role cleared',''));
+}
+
+// ── Toolbar ───────────────────────────────────────────────────────
+const zoneNameEl=document.getElementById('zoneName');
+const ptBadge   =document.getElementById('ptBadge');
+const roiHint   =document.getElementById('roiHint');
+const saveBtn   =document.getElementById('saveBtn');
+// Elements ready
+
+function updateToolbar(){
+  ptBadge.textContent=points.length+' pts';
+  saveBtn.disabled=!(closed&&points.length>=3);
+  if(closed)               roiHint.textContent='✓ Zone closed — click Save Zone';
+  else if(!points.length)  roiHint.textContent='Click corners to draw bed zone';
+  else if(points.length<3) roiHint.textContent=points.length+' pts placed';
+  else                     roiHint.textContent=points.length+' pts — click pt 1 to close';
+}
+
+document.getElementById('undoBtn').onclick=()=>{
+  if(closed) closed=false; else{points.pop();nativePoints.pop();}
+  hoverPt=null; updateToolbar(); redraw();
+};
+document.getElementById('clearBtn').onclick=()=>{
+  points=[]; nativePoints=[]; closed=false; hoverPt=null; editingId=null;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  updateToolbar(); saveBtn.textContent='Save Zone';
+};
+
+saveBtn.onclick=()=>{
+  const polygon=[...nativePoints].map(p=>({x:p.x,y:p.y}));
+  const label=zoneNameEl.value.trim()||'Bed 1';
+  const color=selectedColor.name;
+  const id=editingId||('zone_'+Date.now());
+  const type='bed';
+
+  points=[]; nativePoints=[]; closed=false; hoverPt=null;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  updateToolbar();
+
+  let uz=zonesData.map(z=>({id:z.id,label:z.label,color:z.color,
+    polygon:z.polygon,type:z.type||'bed'}));
+  if(editingId) uz=uz.map(z=>z.id===editingId?{id,label,color,polygon,type}:z);
+  else uz.push({id,label,color,polygon,type});
+  editingId=null; saveBtn.textContent='Save Zone';
+
+  fetch('/api/zones',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({zones:uz})})
+  .then(r=>r.json())
+  .then(d=>d.ok
+    ?showToast('✓ Zone saved — edge & near zones auto-generated','success')
+    :showToast('✗ '+d.error,'error'));
+};
+
+// ── Render zones sidebar ──────────────────────────────────────────
+function renderZones(zones){
+  const el=document.getElementById('zoneList');
+  document.getElementById('zoneCount').textContent=zones.length+' zone'+(zones.length!==1?'s':'');
+  if(!zones.length){
+    el.innerHTML='<div class="pempty">No zones. Use ✏️ Draw Zone.</div>'; return;
+  }
+  el.innerHTML=zones.map(z=>{
+    const hex=ZONE_HEX[z.color]||'#00e5a0';
+    return`<div class="zone-row">
+      <div class="zdot" style="background:${hex};box-shadow:0 0 5px ${hex}50"></div>
+      <span class="zname">${z.label}</span>
+      <span class="ztag">${z.type||'bed'} · edge+near auto</span>
+      <button class="zdel" onclick="deleteZone('${z.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function deleteZone(id){
+  if(!confirm('Delete this zone?')) return;
+  fetch('/api/zones/'+id,{method:'DELETE'})
+  .then(r=>r.json()).then(d=>d.ok&&showToast('Zone deleted','success'));
+}
+
+// ── Render persons ────────────────────────────────────────────────
+function renderPersons(tracks){
+  const el=document.getElementById('personList');
+  document.getElementById('personCount').textContent=tracks.length;
+  if(!tracks.length){
+    el.innerHTML='<div class="pempty">No persons detected</div>'; return;
+  }
+  el.innerHTML=tracks.map(t=>{
+    const rc=t.role||'unassigned';
+    const rl=t.role?t.role.toUpperCase():'UNASSIGNED';
+    const s=t.state||'';
+    const sc=s.includes('ON BED')?'on'
+            :s.includes('EDGE')||s.includes('SITTING')?'warn'
+            :s.includes('OUT')||s.includes('OFF')?'alert':'';
+    const isPatient = t.role==='patient';
+    return`<div class="pcard">
+      <div class="pcard-top">
+        <span class="prole ${rc}">${rl}</span>
+        <span class="pid">Track #${t.track_id} · ${round(t.time_in_state||0)}s</span>
+      </div>
+      <div class="pstate ${sc}">${t.state}</div>
+      ${!isPatient?`<div class="pbtns">
+        <button class="pbtn pbtn-patient" onclick="assignRole(${t.track_id},'patient')">Set as Patient</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+  function round(n){return Math.round(n);}
+}
+
+// ── Render log ────────────────────────────────────────────────────
+function renderLog(log){
+  document.getElementById('logCount').textContent=log.length+' events';
+  const el=document.getElementById('logList');
+  if(!log.length){el.innerHTML='<div class="lempty">Waiting for events…</div>'; return;}
+  el.innerHTML=log.map(e=>`
+    <div class="lrow">
+      <div class="lpip ${(e.level_name||'none').toLowerCase()}"></div>
+      <div class="linfo">
+        <div class="lzone">${e.zone||''} ${e.role?'· '+e.role:''}</div>
+        <div class="lmsg">${e.message||e.new_state||''}</div>
+        <div class="lts">${e.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Alert popup ───────────────────────────────────────────────────
+function triggerAlert(level, msg){
+  if(level<2) return;
+  const p=document.getElementById('alertPopup');
+  document.getElementById('apLv').textContent=
+    level>=4?'🚨 CRITICAL':level>=3?'🚨 ALERT':'⚠️ WARNING';
+  document.getElementById('apMsg').textContent=msg;
+  p.className=level>=3?'show':'show warning';
+  popupShown=true;
+  try{
+    const ac=new AudioContext();
+    const osc=ac.createOscillator(), g=ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.frequency.value=level>=4?880:660;
+    g.gain.setValueAtTime(0.3,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.6);
+    osc.start(); osc.stop(ac.currentTime+0.6);
+  }catch(e){}
+}
+
+function closePopup(){
+  document.getElementById('alertPopup').classList.remove('show');
+  popupShown=false;
+}
+
+function acknowledge(){
+  fetch('/api/acknowledge',{method:'POST'});
+  closePopup();
+  showToast('Alert acknowledged','success');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+const toast=document.getElementById('toast');
+function showToast(msg,type=''){
+  toast.textContent=msg; toast.className='show '+type;
+  setTimeout(()=>toast.className='',3000);
+}
+
+// ── Poll ──────────────────────────────────────────────────────────
+const banner    =document.getElementById('banner');
+const bIcon     =document.getElementById('bIcon');
+const bLabel    =document.getElementById('bLabel');
+const bSub      =document.getElementById('bSub');
+const bTime     =document.getElementById('bTime');
+const liveDot   =document.getElementById('liveDot');
+const camChip   =document.getElementById('camChip');
+const BICONS    ={0:'🛏️',1:'💤',2:'⚠️',3:'🚨',4:'🚨'};
+const BCLASSES  ={0:'safe',1:'info',2:'warning',3:'alert',4:'critical'};
+let lastPstate='',lastLevel=-1;
+
+async function poll(){
+  try{
+    const d=await fetch('/api/status').then(r=>r.json());
+
+    document.getElementById('fpsVal').textContent=d.fps||'—';
+    document.getElementById('stFps').textContent =d.fps||'—';
+
+    const ok=d.cam_status==='OK';
+    camChip.textContent='CAM '+d.cam_status;
+    camChip.style.color=ok?'var(--off)':'var(--on)';
+
+    zonesData =d.zones||[];
+    tracksData=d.tracks||[];
+
+    renderZones(zonesData);
+
+    const pstate =d.patient_state||'UNKNOWN';
+    const level  =d.alert_level||0;
+    const nurse  =d.nurse_nearby;
+
+    document.getElementById('stPatient').textContent=pstate;
+    document.getElementById('stPatient').className='sc-val '+(level>=3?'on':level>=2?'warn':'off');
+    document.getElementById('stAlert').textContent =d.alert_name||'NONE';
+    document.getElementById('stAlert').className  ='sc-val '+(level>=3?'on':level>=2?'warn':'');
+    document.getElementById('stNurse').textContent =nurse?'NEARBY':'—';
+    document.getElementById('stNurse').className  ='sc-val '+(nurse?'warn':'');
+
+    if(pstate!==lastPstate||level!==lastLevel){
+      lastPstate=pstate; lastLevel=level;
+      bIcon.textContent =BICONS[level]||'🛏️';
+      bLabel.textContent=pstate;
+      bSub.textContent  =nurse&&level>=2?'⚠️ Nurse nearby':'Bed Occupancy · KuboCare';
+      banner.className  ='banner '+(BCLASSES[level]||'safe');
+      liveDot.className ='dot'+(level>=3?' alert':level>=2?' warn':'');
+      if(level>=3&&!popupShown) triggerAlert(level,pstate+(nurse?' — Nurse nearby':''));
+      if(level<2) popupShown=false;
+    }
+
+    if(d.log&&d.log.length){
+      bTime.textContent=d.log[0].time;
+      renderLog(d.log);
+    }
+
+  }catch(e){ document.getElementById('fpsVal').textContent='ERR'; }
+}
+
+setInterval(poll,1000); poll();
+window.addEventListener('load',()=>{
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  points=[]; nativePoints=[]; closed=false; hoverPt=null;
+});
+</script>
+</body>
+</html>

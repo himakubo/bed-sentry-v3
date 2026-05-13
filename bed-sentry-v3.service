@@ -1,0 +1,18 @@
+[Unit]
+Description=Bed-Sentry v3 Occupancy Monitor
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/bed-sentry-v3
+ExecStart=/home/pi/bed-sentry/venv/bin/python app.py --width 1280 --height 400 --skip 2
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
