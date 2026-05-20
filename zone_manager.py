@@ -11,8 +11,8 @@ import cv2
 CONFIG_FILE = "config.json"
 
 # Pixel offsets for auto-generated zones
-EDGE_OFFSET = 80   # pixels outward from bed polygon
-NEAR_OFFSET = 160   # pixels outward from bed polygon
+EDGE_OFFSET = 50   # pixels outward from bed polygon
+NEAR_OFFSET = 120  # pixels outward from bed polygon
 
 
 def expand_polygon(polygon: list, offset: int) -> list:
@@ -86,13 +86,10 @@ def load_zones() -> list:
     config = load_config()
     zones  = config.get("zones", [])
 
-    # Auto-generate edge/near polygons if missing
+    # Auto-generate near_polygon only if missing; never touch edge_polygon
     updated = False
     for z in zones:
         if z.get("type") == "bed" and z.get("polygon"):
-            if not z.get("edge_polygon"):
-                z["edge_polygon"] = expand_polygon(z["polygon"], EDGE_OFFSET)
-                updated = True
             if not z.get("near_polygon"):
                 z["near_polygon"] = expand_polygon(z["polygon"], NEAR_OFFSET)
                 updated = True
@@ -107,10 +104,9 @@ def load_zones() -> list:
 
 
 def save_zones(zones: list) -> bool:
-    """Save zones, auto-generating edge/near polygons."""
+    """Save zones. Only auto-generates near_polygon; edge_polygon is never touched."""
     for z in zones:
         if z.get("type") == "bed" and z.get("polygon"):
-            z["edge_polygon"] = expand_polygon(z["polygon"], EDGE_OFFSET)
             z["near_polygon"] = expand_polygon(z["polygon"], NEAR_OFFSET)
 
     config = load_config()
@@ -123,14 +119,31 @@ def validate_zone(zone: dict) -> bool:
     try:
         if not isinstance(zone.get("id"), str): return False
         if not isinstance(zone.get("label"), str): return False
-        poly = zone.get("polygon", [])
-        if len(poly) < 3: return False
-        for pt in poly:
-            if not isinstance(pt.get("x"), (int, float)): return False
-            if not isinstance(pt.get("y"), (int, float)): return False
-        return True
+
+        def _valid_poly(poly):
+            if not poly or len(poly) < 3: return False
+            return all(isinstance(pt.get("x"), (int, float)) and
+                       isinstance(pt.get("y"), (int, float)) for pt in poly)
+
+        # Accept zone if it has a valid polygon OR a valid edge_polygon
+        return _valid_poly(zone.get("polygon")) or _valid_poly(zone.get("edge_polygon"))
     except Exception:
         return False
+
+
+def update_offsets(edge: int, near: int) -> bool:
+    """Update NEAR_OFFSET and regenerate near polygons only."""
+    global EDGE_OFFSET, NEAR_OFFSET
+    EDGE_OFFSET = edge
+    NEAR_OFFSET = near
+    config = load_config()
+    zones  = config.get("zones", [])
+    for z in zones:
+        if z.get("type") == "bed" and z.get("polygon"):
+            z["near_polygon"] = expand_polygon(z["polygon"], NEAR_OFFSET)
+    config["zones"] = zones
+    print(f"[Zone] Offsets updated: near={near}px")
+    return save_config(config)
 
 
 def point_in_polygon(px: int, py: int, polygon: list) -> bool:

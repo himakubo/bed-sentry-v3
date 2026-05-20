@@ -4,238 +4,253 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bed-Sentry v3 · KuboCare</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#060608;--surface:#0d0d12;--card:#111118;
-  --border:#1c1c28;--border2:#252535;--text:#e8e8f0;--muted:#52526a;
-  --on:#ff3b3b;--on-dim:rgba(255,59,59,0.12);--on-glow:rgba(255,59,59,0.3);
-  --off:#00e5a0;--off-dim:rgba(0,229,160,0.10);--off-glow:rgba(0,229,160,0.25);
-  --warn:#ff9800;--info:#38bdf8;--accent:#6366f1;
-  --display:'Syne',sans-serif;--mono:'DM Mono',monospace;
+  --bg:#06080b;
+  --surface:#0b0e12;
+  --card:#101418;
+  --card2:#151a20;
+  --border:#1b2028;
+  --border2:#252e3a;
+  --text:#cdd5e0;
+  --muted:#3d4a5c;
+  --muted2:#5e7080;
+  --on-bed:#00c97a;
+  --at-edge:#f59e0b;
+  --getting-out:#ef4444;
+  --off-bed:#ef4444;
+  --accent:#6366f1;
+  --info:#38bdf8;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
 }
 html,body{height:100%;overflow:hidden;}
-body{background:var(--bg);color:var(--text);font-family:var(--mono);
-  display:grid;grid-template-rows:52px 1fr;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;
+  display:grid;grid-template-rows:48px 1fr;}
 
-/* HEADER */
+/* ── HEADER ─────────────────────────────────────────────────────── */
 header{display:flex;align-items:center;justify-content:space-between;
-  padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);}
-.logo{font-family:var(--display);font-size:1.05rem;font-weight:800;
-  display:flex;align-items:center;gap:9px;}
-.logo-badge{width:24px;height:24px;background:linear-gradient(135deg,var(--accent),#a78bfa);
-  border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;
-  box-shadow:0 0 14px rgba(99,102,241,0.5);}
+  padding:0 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.logo{font-size:0.88rem;font-weight:700;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;}
+.logo-mark{width:22px;height:22px;background:linear-gradient(135deg,var(--accent),#a78bfa);
+  border-radius:4px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;box-shadow:0 0 10px rgba(99,102,241,.4);}
 .logo em{color:var(--accent);font-style:normal;}
 .hright{display:flex;align-items:center;gap:6px;}
-.chip{display:flex;align-items:center;gap:5px;padding:4px 11px;
+.chip{display:flex;align-items:center;gap:5px;padding:3px 10px;
   background:var(--card);border:1px solid var(--border);border-radius:100px;
-  font-size:0.65rem;color:var(--muted);}
-.chip b{color:var(--text);font-weight:500;}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--off);
-  box-shadow:0 0 6px var(--off);animation:breathe 2s infinite;}
-.dot.alert{background:var(--on);box-shadow:0 0 8px var(--on);animation:pal 0.8s infinite;}
-.dot.warn{background:var(--warn);box-shadow:0 0 8px var(--warn);}
-@keyframes breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-@keyframes pal{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+  font-size:0.68rem;color:var(--muted2);white-space:nowrap;}
+.chip b{color:var(--text);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--on-bed);
+  box-shadow:0 0 6px var(--on-bed);animation:breathe 2s infinite;flex-shrink:0;}
+.live-dot.warn{background:var(--at-edge);box-shadow:0 0 6px var(--at-edge);animation:none;}
+.live-dot.alert{background:var(--getting-out);box-shadow:0 0 8px var(--getting-out);animation:blink .75s infinite;}
+@keyframes breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+@keyframes blink{0%,100%{transform:scale(1)}50%{transform:scale(1.65)}}
 
-/* LAYOUT */
-main{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 52px);overflow:hidden;}
+/* ── MAIN LAYOUT ─────────────────────────────────────────────────── */
+main{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 48px);overflow:hidden;}
 
-/* LEFT */
-.left{display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;
-  padding:14px;overflow:hidden;border-right:1px solid var(--border);}
+/* ── LEFT PANEL ─────────────────────────────────────────────────── */
+.left{display:grid;grid-template-rows:auto auto 1fr auto;gap:8px;
+  padding:10px;overflow:hidden;border-right:1px solid var(--border);}
 
-/* BANNER */
-.banner{position:relative;padding:14px 20px;border-radius:10px;
-  border:1px solid var(--border);background:var(--card);
-  display:flex;align-items:center;justify-content:space-between;overflow:hidden;}
-.banner::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse 50% 100% at 100% 50%,var(--glow,transparent),transparent);}
-.banner.safe  {border-color:rgba(0,229,160,.25);--glow:var(--off-glow);}
-.banner.info  {border-color:rgba(56,189,248,.3);}
-.banner.warning{border-color:rgba(255,152,0,.3);}
-.banner.alert {border-color:rgba(255,59,59,.35);--glow:var(--on-glow);}
-.banner.critical{border-color:rgba(255,59,59,.5);--glow:var(--on-glow);animation:flash 1s infinite;}
-@keyframes flash{0%,100%{opacity:1}50%{opacity:.75}}
+/* ── STATE BADGE ─────────────────────────────────────────────────── */
+.state-badge{position:relative;overflow:hidden;padding:14px 18px;border-radius:8px;
+  border:2px solid var(--border2);display:flex;align-items:center;gap:14px;
+  transition:border-color .3s,box-shadow .3s;}
+.state-badge::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 55% 80% at 95% 50%,var(--badge-glow,transparent),transparent);}
 
-.b-left{display:flex;align-items:center;gap:14px;position:relative;}
-.b-icon{font-size:1.8rem;}
-.b-label{font-family:var(--display);font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;}
-.banner.safe .b-label{color:var(--off);text-shadow:0 0 20px var(--off-glow);}
-.banner.info .b-label{color:var(--info);}
-.banner.warning .b-label{color:var(--warn);}
-.banner.alert .b-label,.banner.critical .b-label{color:var(--on);text-shadow:0 0 20px var(--on-glow);}
-.b-sub{font-size:0.55rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:3px;}
-.b-right{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
-.b-time{font-size:0.62rem;color:var(--muted);}
-.btn-ack{font-family:var(--mono);font-size:0.62rem;font-weight:600;
-  background:var(--on);color:#fff;border:none;padding:5px 12px;
-  border-radius:5px;cursor:pointer;display:none;}
-.banner.alert .btn-ack,.banner.critical .btn-ack{display:block;}
+.state-badge.s-on-bed    {border-color:rgba(0,201,122,.3);  --badge-glow:rgba(0,201,122,.12);}
+.state-badge.s-at-edge   {border-color:rgba(245,158,11,.4); --badge-glow:rgba(245,158,11,.15);}
+.state-badge.s-getting-out{border-color:rgba(239,68,68,.55);--badge-glow:rgba(239,68,68,.2);
+  animation:badge-flash .7s infinite;}
+.state-badge.s-off-bed   {border-color:rgba(239,68,68,.75);--badge-glow:rgba(239,68,68,.3);
+  animation:badge-flash .45s infinite;}
+@keyframes badge-flash{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* MODE BAR */
-.modebar{display:flex;gap:8px;align-items:center;}
-.modeinfo{flex:1;font-size:0.63rem;color:var(--muted);
-  padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px;}
-.modeinfo.draw{color:var(--accent);}
-.modeinfo.assign{color:var(--off);}
+.badge-icon{font-size:2.4rem;line-height:1;user-select:none;flex-shrink:0;}
+.badge-body{flex:1;min-width:0;}
+.badge-state{font-size:2.2rem;font-weight:700;letter-spacing:-1px;line-height:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.s-on-bed     .badge-state{color:var(--on-bed);   text-shadow:0 0 24px rgba(0,201,122,.4);}
+.s-at-edge    .badge-state{color:var(--at-edge);  text-shadow:0 0 24px rgba(245,158,11,.4);}
+.s-getting-out .badge-state{color:var(--getting-out);text-shadow:0 0 28px rgba(239,68,68,.5);}
+.s-off-bed    .badge-state{color:var(--off-bed);  text-shadow:0 0 32px rgba(239,68,68,.6);}
+.badge-dur{font-size:0.68rem;color:var(--muted2);margin-top:5px;}
+.badge-dur-val{font-size:1rem;font-weight:600;color:var(--text);margin-right:4px;}
+.badge-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+.badge-ack{font-family:var(--mono);font-size:0.62rem;font-weight:600;
+  background:var(--getting-out);color:#fff;border:none;padding:5px 12px;
+  border-radius:4px;cursor:pointer;white-space:nowrap;display:none;}
+.s-getting-out .badge-ack,.s-off-bed .badge-ack{display:block;}
+.badge-ts{font-size:0.58rem;color:var(--muted);text-align:right;}
 
-/* VIDEO */
-.video-wrap{position:relative;background:#000;border-radius:10px;
+/* ── MODE BAR ─────────────────────────────────────────────────────── */
+.modebar{display:flex;align-items:center;gap:8px;}
+.modeinfo{flex:1;font-size:0.62rem;padding:5px 10px;
+  background:var(--card);border:1px solid var(--border);border-radius:5px;
+  color:var(--muted2);}
+.modeinfo.active{color:var(--accent);}
+
+/* ── VIDEO ───────────────────────────────────────────────────────── */
+.video-wrap{position:relative;background:#000;border-radius:8px;
   overflow:hidden;border:1px solid var(--border);min-height:0;}
 #videoFeed{width:100%;height:100%;object-fit:contain;display:block;
   pointer-events:none;user-select:none;}
 #roiCanvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;}
-#assignOverlay{position:absolute;top:0;left:0;width:100%;height:100%;
-  cursor:crosshair;display:none;}
 
-/* TOOLBAR */
-.toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;
-  padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;}
-.tlbl{font-size:0.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+/* ── TOOLBAR ─────────────────────────────────────────────────────── */
+.toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px;}
+.tlbl{font-size:0.53rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 .tinput{font-family:var(--mono);font-size:0.65rem;background:var(--bg);
   border:1px solid var(--border2);color:var(--text);padding:4px 8px;
-  border-radius:5px;width:85px;outline:none;}
+  border-radius:4px;width:80px;outline:none;}
 .tinput:focus{border-color:var(--accent);}
-.cpick{display:flex;gap:3px;}
-.csw{width:12px;height:12px;border-radius:50%;cursor:pointer;
-  border:2px solid transparent;transition:all .15s;}
-.csw.active{border-color:var(--text);transform:scale(1.35);}
-.thint{flex:1;color:var(--muted);font-size:0.62rem;}
-.tbadge{font-size:0.56rem;color:var(--muted);background:var(--bg);
-  padding:2px 7px;border-radius:100px;border:1px solid var(--border);}
+.cpick{display:flex;gap:3px;align-items:center;}
+.csw{width:11px;height:11px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.csw.active{border-color:var(--text);transform:scale(1.4);}
+.thint{flex:1;color:var(--muted2);font-size:0.6rem;}
+.tbadge{font-size:0.55rem;color:var(--muted);background:var(--bg);
+  padding:2px 6px;border-radius:100px;border:1px solid var(--border);}
 .btn{font-family:var(--mono);font-size:0.62rem;font-weight:500;
-  padding:5px 11px;border-radius:5px;border:1px solid transparent;
+  padding:5px 10px;border-radius:4px;border:1px solid transparent;
   cursor:pointer;transition:all .15s;white-space:nowrap;}
-.btn-p{background:var(--accent);color:#fff;border-color:var(--accent);
-  box-shadow:0 0 12px rgba(99,102,241,.3);}
-.btn-p:hover{background:#5355d4;}
-.btn-p:disabled{background:var(--card);color:var(--muted);border-color:var(--border);
-  cursor:not-allowed;box-shadow:none;}
-.btn-g{background:transparent;color:var(--muted);border-color:var(--border);}
-.btn-g:hover{border-color:var(--border2);color:var(--text);}
-.btn-teal{background:var(--off);color:#000;border-color:var(--off);}
-.btn-teal:hover{filter:brightness(0.9);}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-primary:hover{filter:brightness(1.12);}
+.btn-primary:disabled{background:var(--card2);color:var(--muted);border-color:var(--border);
+  cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--muted2);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
 
-/* RIGHT */
+/* ── RIGHT PANEL ─────────────────────────────────────────────────── */
 .right{display:flex;flex-direction:column;background:var(--surface);overflow:hidden;}
-.stats{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);flex-shrink:0;}
-.sc{padding:12px 14px;border-right:1px solid var(--border);}
-.sc:nth-child(2n){border-right:none;}
-.sc:nth-child(n+3){border-top:1px solid var(--border);}
-.sc-lbl{font-size:0.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.sc-val{font-family:var(--display);font-size:1.4rem;font-weight:700;letter-spacing:-0.8px;line-height:1;}
-.sc-val.on{color:var(--on);text-shadow:0 0 10px var(--on-glow);}
-.sc-val.off{color:var(--off);text-shadow:0 0 10px var(--off-glow);}
-.sc-val.warn{color:var(--warn);}
 
-/* Section header */
+/* ── DEBUG PANEL ─────────────────────────────────────────────────── */
+.debug-panel{flex-shrink:0;border-bottom:1px solid var(--border);}
+.debug-header{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 14px;cursor:pointer;user-select:none;}
+.debug-header:hover{background:var(--card);}
+.debug-hl{display:flex;align-items:center;gap:8px;}
+.debug-title{font-size:0.53rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);}
+.debug-summary{font-size:0.6rem;color:var(--muted);}
+.debug-toggle{font-size:0.58rem;color:var(--muted);transition:transform .2s;}
+.debug-panel.open .debug-toggle{transform:rotate(180deg);}
+.debug-body{display:none;padding:8px 14px 10px;}
+.debug-panel.open .debug-body{display:block;}
+.dbsec{margin-bottom:6px;}
+.dbsec-title{font-size:0.49rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.dbgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px 10px;}
+.dbrow{display:flex;align-items:center;justify-content:space-between;padding:2px 0;}
+.dbkey{font-size:0.59rem;color:var(--muted2);}
+.dbval{font-size:0.59rem;font-weight:600;color:var(--text);}
+.dbval.t{color:var(--on-bed);}
+.dbval.f{color:var(--muted);}
+.dbval.flat{color:var(--at-edge);}
+
+/* ── SECTION HEADER ──────────────────────────────────────────────── */
 .sh{display:flex;align-items:center;justify-content:space-between;
-  padding:8px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.sh-t{font-size:0.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  padding:7px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sh-t{font-size:0.53rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 
-/* Zone list */
-.zone-row{display:flex;align-items:center;gap:8px;padding:8px 14px;
+/* ── ZONE LIST ───────────────────────────────────────────────────── */
+.zone-row{display:flex;align-items:center;gap:8px;padding:7px 14px;
   border-bottom:1px solid var(--border);}
 .zdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.zname{flex:1;font-size:0.72rem;font-weight:500;}
-.ztag{font-size:0.58rem;color:var(--muted);}
+.zname{flex:1;font-size:0.7rem;font-weight:500;}
+.ztag{font-size:0.57rem;color:var(--muted);}
 .zdel{background:none;border:none;color:var(--muted);cursor:pointer;
   font-size:0.7rem;padding:2px 5px;border-radius:3px;}
-.zdel:hover{background:var(--on-dim);color:var(--on);}
+.zdel:hover{color:var(--getting-out);}
+.pempty{padding:12px 14px;font-size:0.62rem;color:var(--muted);text-align:center;}
 
-/* Person cards */
-.pcard{padding:9px 14px;border-bottom:1px solid var(--border);}
-.pcard-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
-.prole{font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:100px;}
-.prole.patient{background:rgba(0,229,160,0.15);color:var(--off);}
-.prole.nurse{background:rgba(56,189,248,0.15);color:var(--info);}
-.prole.unassigned{background:var(--border);color:var(--muted);}
-.pid{font-size:0.62rem;color:var(--muted);}
-.pstate{font-family:var(--display);font-size:0.9rem;font-weight:700;margin-bottom:5px;}
-.pstate.on{color:var(--off);}
-.pstate.warn{color:var(--warn);}
-.pstate.alert{color:var(--on);}
-.pbtns{display:flex;gap:4px;}
-.pbtn{font-family:var(--mono);font-size:0.56rem;font-weight:600;
-  padding:3px 7px;border-radius:3px;border:none;cursor:pointer;}
-.pbtn-patient{background:var(--off);color:#000;}
-.pbtn-nurse{background:var(--info);color:#000;}
-.pbtn-clear{background:var(--border2);color:var(--muted);}
-.pempty{padding:14px;font-size:0.65rem;color:var(--muted);text-align:center;}
-
-/* Log */
+/* ── EVENT LOG ───────────────────────────────────────────────────── */
 .log-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
 .log-scroll{flex:1;overflow-y:auto;}
 .log-scroll::-webkit-scrollbar{width:2px;}
 .log-scroll::-webkit-scrollbar-thumb{background:var(--border2);}
-.lrow{display:flex;gap:8px;padding:7px 14px;
-  border-bottom:1px solid var(--border);animation:lin .2s ease;}
-@keyframes lin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-.lpip{width:3px;border-radius:2px;align-self:stretch;min-height:26px;flex-shrink:0;}
-.lpip.critical,.lpip.alert{background:var(--on);box-shadow:0 0 5px var(--on-glow);}
-.lpip.warning{background:var(--warn);}
+.lrow{display:flex;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border);
+  animation:fadein .2s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.lpip{width:3px;border-radius:2px;align-self:stretch;min-height:22px;flex-shrink:0;}
+.lpip.critical,.lpip.alert{background:var(--getting-out);}
+.lpip.warning{background:var(--at-edge);}
 .lpip.info{background:var(--info);}
-.lpip.none{background:var(--off);box-shadow:0 0 5px var(--off-glow);}
-.linfo{flex:1;}
-.lzone{font-size:0.6rem;color:var(--muted);}
-.lmsg{font-size:0.68rem;font-weight:500;margin-top:1px;}
-.lts{font-size:0.55rem;color:var(--muted);margin-top:1px;}
-.lempty{padding:28px 14px;text-align:center;color:var(--muted);font-size:0.65rem;}
+.lpip.none{background:var(--on-bed);}
+.linfo{flex:1;min-width:0;}
+.lmsg{font-size:0.67rem;font-weight:500;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lts{font-size:0.54rem;color:var(--muted);margin-top:1px;}
+.lempty{padding:24px 14px;text-align:center;color:var(--muted);font-size:0.62rem;}
 
-/* Alert popup */
+/* ── ALERT POPUP ─────────────────────────────────────────────────── */
 #alertPopup{position:fixed;top:16px;left:50%;
-  transform:translateX(-50%) translateY(-130px);
-  background:var(--card);border:2px solid var(--on);border-radius:12px;
-  padding:16px 24px;min-width:320px;text-align:center;
-  transition:transform .4s cubic-bezier(.175,.885,.32,1.275);z-index:2000;
-  box-shadow:0 8px 40px rgba(255,59,59,0.35);}
+  transform:translateX(-50%) translateY(-160px);
+  background:var(--card);border:2px solid var(--getting-out);border-radius:10px;
+  padding:16px 22px;min-width:300px;text-align:center;
+  transition:transform .4s cubic-bezier(.175,.885,.32,1.275);
+  z-index:2000;box-shadow:0 8px 48px rgba(239,68,68,.3);}
 #alertPopup.show{transform:translateX(-50%) translateY(0);}
-#alertPopup.warning{border-color:var(--warn);box-shadow:0 8px 40px rgba(255,152,0,0.3);}
-.ap-lv{font-size:0.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--on);margin-bottom:4px;}
-.ap-msg{font-family:var(--display);font-size:1.05rem;font-weight:700;}
-.ap-close{margin-top:10px;font-family:var(--mono);font-size:0.62rem;
-  background:var(--on);color:#fff;border:none;padding:5px 14px;
-  border-radius:5px;cursor:pointer;width:100%;}
+#alertPopup.warn{border-color:var(--at-edge);box-shadow:0 8px 40px rgba(245,158,11,.25);}
+.ap-lv{font-size:0.56rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--getting-out);margin-bottom:4px;}
+#alertPopup.warn .ap-lv{color:var(--at-edge);}
+.ap-msg{font-size:1.05rem;font-weight:700;margin-bottom:10px;}
+.ap-close{font-family:var(--mono);font-size:0.65rem;font-weight:600;
+  background:var(--getting-out);color:#fff;border:none;
+  padding:6px 16px;border-radius:4px;cursor:pointer;width:100%;}
+#alertPopup.warn .ap-close{background:var(--at-edge);color:#000;}
 
-/* Assign modal */
-#assignModal{position:fixed;inset:0;background:rgba(0,0,0,0.7);
-  display:none;align-items:center;justify-content:center;z-index:1500;}
-#assignModal.show{display:flex;}
-.amodal{background:var(--card);border:1px solid var(--border2);border-radius:12px;
-  padding:24px;min-width:260px;text-align:center;}
-.amodal-title{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
-.amodal-sub{font-size:0.65rem;color:var(--muted);margin-bottom:16px;}
-.amodal-btns{display:flex;gap:8px;}
-.amodal-btn{flex:1;font-family:var(--mono);font-size:0.7rem;font-weight:600;
-  padding:9px;border-radius:6px;border:none;cursor:pointer;}
-.amodal-patient{background:var(--off);color:#000;}
-.amodal-nurse{background:var(--info);color:#000;}
-.amodal-cancel{background:var(--border2);color:var(--muted);}
+/* ── DRAW BUTTONS / ZONE EDIT ────────────────────────────────────── */
+.btn-bed{background:rgba(0,201,122,0.14);color:var(--on-bed);border-color:rgba(0,201,122,0.35);}
+.btn-bed:hover{background:rgba(0,201,122,0.25);}
+.btn-edge{background:rgba(245,158,11,0.14);color:var(--at-edge);border-color:rgba(245,158,11,0.35);}
+.btn-edge:hover{background:rgba(245,158,11,0.25);}
+.zedit{background:none;border:1px solid var(--border);color:var(--muted2);cursor:pointer;
+  font-size:0.6rem;font-family:var(--mono);padding:2px 7px;border-radius:3px;}
+.zedit:hover{border-color:var(--accent);color:var(--accent);}
+.zedit.edge:hover{border-color:var(--at-edge);color:var(--at-edge);}
 
-#toast{position:fixed;bottom:18px;left:50%;
+/* ── ZONE SETTINGS ───────────────────────────────────────────────── */
+.zone-settings{padding:8px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.zs-row{display:flex;align-items:center;gap:8px;padding:3px 0;}
+.zs-label{font-size:0.6rem;color:var(--muted2);width:108px;flex-shrink:0;}
+.zs-slider{flex:1;cursor:pointer;accent-color:var(--accent);height:2px;}
+.zs-val{font-size:0.65rem;font-weight:600;color:var(--text);width:28px;text-align:right;flex-shrink:0;}
+
+/* ── TEST MODE ───────────────────────────────────────────────────── */
+.btn-test-run{background:rgba(239,68,68,0.14);color:var(--getting-out);border-color:rgba(239,68,68,0.35);}
+.btn-test-run:hover{background:rgba(239,68,68,0.25);}
+.test-report{flex-shrink:0;display:flex;flex-direction:column;border-bottom:1px solid var(--border);max-height:260px;overflow:hidden;}
+.test-report-scroll{flex:1;overflow-y:auto;padding:0 14px 10px;}
+.test-report-scroll::-webkit-scrollbar{width:2px;}
+.test-report-scroll::-webkit-scrollbar-thumb{background:var(--border2);}
+.test-pre{font-family:var(--mono);font-size:0.56rem;color:var(--text);line-height:1.65;white-space:pre-wrap;margin:0;}
+
+/* ── TOAST ───────────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:16px;left:50%;
   transform:translateX(-50%) translateY(60px);
   background:var(--card);border:1px solid var(--border2);color:var(--text);
-  padding:7px 14px;border-radius:7px;font-size:0.67rem;
+  padding:6px 14px;border-radius:6px;font-size:0.65rem;
   transition:transform .3s cubic-bezier(.175,.885,.32,1.275);
-  z-index:1000;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+  z-index:1000;white-space:nowrap;}
 #toast.show{transform:translateX(-50%) translateY(0);}
-#toast.success{border-color:var(--off);color:var(--off);}
-#toast.error{border-color:var(--on);color:var(--on);}
+#toast.success{border-color:var(--on-bed);color:var(--on-bed);}
+#toast.error{border-color:var(--getting-out);color:var(--getting-out);}
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <div class="logo-badge">🛏</div>
-    Bed<em>-Sentry</em>
-    <span style="font-size:0.65rem;color:var(--muted)">v3</span>
+    <div class="logo-mark">🛏</div>
+    Bed<em>-Sentry</em>&nbsp;<span style="font-weight:300;color:var(--muted)">v3</span>
   </div>
   <div class="hright">
-    <div class="chip"><div class="dot" id="liveDot"></div> FPS <b id="fpsVal">—</b></div>
+    <div class="chip"><div class="live-dot" id="liveDot"></div> FPS <b id="fpsVal">—</b></div>
     <div class="chip" id="camChip">CAM —</div>
   </div>
 </header>
@@ -244,45 +259,38 @@ main{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 52px);over
   <!-- LEFT PANEL -->
   <div class="left">
 
-    <!-- Status Banner -->
-    <div class="banner safe" id="banner">
-      <div class="b-left">
-        <div class="b-icon" id="bIcon">🛏️</div>
-        <div>
-          <div class="b-label" id="bLabel">OFF BED</div>
-          <div class="b-sub" id="bSub">Bed Occupancy · KuboCare</div>
-        </div>
+    <!-- State Badge -->
+    <div class="state-badge s-on-bed" id="stateBadge">
+      <div class="badge-icon" id="badgeIcon">🛏️</div>
+      <div class="badge-body">
+        <div class="badge-state" id="badgeState">ON BED</div>
+        <div class="badge-dur">In state:&ensp;<span class="badge-dur-val" id="badgeDur">—</span></div>
       </div>
-      <div class="b-right">
-        <div class="b-time" id="bTime">—</div>
-        <button class="btn-ack" onclick="acknowledge()">✓ Acknowledge</button>
+      <div class="badge-right">
+        <button class="badge-ack" onclick="acknowledge()">✓ Ack</button>
+        <div class="badge-ts" id="badgeTs">—</div>
       </div>
     </div>
 
-    <!-- Mode Bar -->
-    <div class="modebar">
-      <button class="btn btn-p" id="btnDraw" onclick="setMode('draw')">✏️ Draw Zone</button>
-
-      <div class="modeinfo draw" id="modeInfo">Draw mode — click corners on video to map bed zone</div>
+    <!-- Draw Buttons (idle) -->
+    <div class="modebar" id="drawButtons">
+      <input type="text" class="tinput" id="zoneName" placeholder="Bed 1" style="width:68px">
+      <button class="btn btn-bed"  onclick="startDraw('bed')">Draw Bed Zone</button>
+      <button class="btn btn-edge" onclick="startDraw('edge')">Draw Edge Zone</button>
     </div>
 
     <!-- Video -->
     <div class="video-wrap" id="videoWrap">
-      <img id="videoFeed" src="/stream" alt="Camera">
+      <img id="videoFeed" src="/stream" alt="Camera feed">
       <canvas id="roiCanvas"></canvas>
-
     </div>
 
-    <!-- Zone Toolbar -->
-    <div class="toolbar">
-      <span class="tlbl">Zone</span>
-      <input type="text" class="tinput" id="zoneName" placeholder="Bed 1">
-      <div class="cpick" id="colorPicker"></div>
-      <span class="thint" id="roiHint">Click corners to draw bed zone</span>
-      <span class="tbadge" id="ptBadge">0 pts</span>
-      <button class="btn btn-g" id="undoBtn">↩</button>
-      <button class="btn btn-g" id="clearBtn">Clear</button>
-      <button class="btn btn-p" id="saveBtn" disabled>Save Zone</button>
+    <!-- Draw Controls (shown while drawing) -->
+    <div class="toolbar" id="drawControls" style="display:none">
+      <span class="thint" id="drawHintText">Click to place corners</span>
+      <button class="btn btn-ghost" id="undoDrawBtn">↩ Undo</button>
+      <button class="btn btn-ghost" id="cancelDrawBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveDrawBtn" disabled>Save Zone</button>
     </div>
 
   </div>
@@ -290,34 +298,86 @@ main{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 52px);over
   <!-- RIGHT PANEL -->
   <div class="right">
 
-    <!-- Stats -->
-    <div class="stats">
-      <div class="sc"><div class="sc-lbl">Patient</div><div class="sc-val off" id="stPatient">—</div></div>
-      <div class="sc"><div class="sc-lbl">Alert</div><div class="sc-val" id="stAlert">NONE</div></div>
-      <div class="sc"><div class="sc-lbl">Nurse</div><div class="sc-val" id="stNurse">—</div></div>
-      <div class="sc"><div class="sc-lbl">FPS</div><div class="sc-val" id="stFps">—</div></div>
+    <!-- Debug Panel -->
+    <div class="debug-panel open" id="debugPanel">
+      <div class="debug-header" onclick="document.getElementById('debugPanel').classList.toggle('open')">
+        <div class="debug-hl">
+          <span class="debug-title">Debug</span>
+          <span class="debug-summary" id="debugSummary">AR:— &nbsp;MOT:—</span>
+        </div>
+        <span class="debug-toggle">▲</span>
+      </div>
+      <div class="debug-body">
+        <div class="dbsec">
+          <div class="dbsec-title">Detection</div>
+          <div class="dbgrid">
+            <div class="dbrow"><span class="dbkey">AR</span>       <span class="dbval" id="dbAr">—</span></div>
+            <div class="dbrow"><span class="dbkey">Flat</span>     <span class="dbval" id="dbFlat">—</span></div>
+            <div class="dbrow"><span class="dbkey">Motion</span>   <span class="dbval" id="dbMot">—</span></div>
+            <div class="dbrow"><span class="dbkey">Candidate</span><span class="dbval" id="dbCand">—</span></div>
+          </div>
+        </div>
+        <div class="dbsec">
+          <div class="dbsec-title">Grace Timer</div>
+          <div class="dbgrid">
+            <div class="dbrow"><span class="dbkey">Elapsed</span><span class="dbval" id="dbGraceEl">—</span></div>
+            <div class="dbrow"><span class="dbkey">Needed</span> <span class="dbval" id="dbGraceNd">—</span></div>
+          </div>
+        </div>
+        <div class="dbsec">
+          <div class="dbsec-title">Zone Membership</div>
+          <div class="dbgrid">
+            <div class="dbrow"><span class="dbkey">torso/bed</span> <span class="dbval" id="dbTorsoBed">—</span></div>
+            <div class="dbrow"><span class="dbkey">head/bed</span>  <span class="dbval" id="dbHeadBed">—</span></div>
+            <div class="dbrow"><span class="dbkey">torso/edge</span><span class="dbval" id="dbTorsoEdge">—</span></div>
+            <div class="dbrow"><span class="dbkey">head/edge</span> <span class="dbval" id="dbHeadEdge">—</span></div>
+            <div class="dbrow"><span class="dbkey">torso/near</span><span class="dbval" id="dbTorsoNear">—</span></div>
+            <div class="dbrow"><span class="dbkey">head/near</span> <span class="dbval" id="dbHeadNear">—</span></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Zones -->
-    <div>
-      <div class="sh">
-        <span class="sh-t">Mapped Zones</span>
-        <span class="sh-t" id="zoneCount">0</span>
+    <div class="sh"><span class="sh-t">Mapped Zones</span><span class="sh-t" id="zoneCount">0</span></div>
+    <div id="zoneList"><div class="pempty">No zones · use ✏ Draw Zone</div></div>
+
+    <!-- Zone Settings -->
+    <div class="sh"><span class="sh-t">Zone Settings</span></div>
+    <div class="zone-settings">
+      <div class="zs-row">
+        <span class="zs-label">Near zone (px)</span>
+        <input type="range" class="zs-slider" id="nearSlider" min="50" max="300" value="120">
+        <span class="zs-val" id="nearVal">120</span>
       </div>
-      <div id="zoneList"><div class="pempty">No zones. Use ✏️ Draw Zone.</div></div>
     </div>
 
+    <!-- Test Mode -->
+    <div class="sh"><span class="sh-t">Test Mode</span></div>
+    <div style="padding:8px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <button class="btn btn-ghost" id="testBtn" onclick="toggleTest()"
+        style="width:100%;padding:7px 10px;font-size:0.65rem;justify-content:center;">
+        ▶ Start Test
+      </button>
+      <div id="testStatus" style="display:none;font-size:0.6rem;color:var(--at-edge);
+        margin-top:7px;text-align:center;letter-spacing:.5px;">
+        ● Recording&nbsp;&nbsp;<span id="testElapsed">0s</span>
+      </div>
+    </div>
 
+    <!-- Test Report (hidden until test stops) -->
+    <div class="test-report" id="testReport" style="display:none">
+      <div class="sh">
+        <span class="sh-t">Test Report</span>
+        <button class="btn btn-ghost" onclick="copyReport()" style="font-size:0.58rem;padding:2px 8px;">⎘ Copy</button>
+      </div>
+      <div class="test-report-scroll"><pre class="test-pre" id="testReportPre"></pre></div>
+    </div>
 
     <!-- Log -->
     <div class="log-wrap">
-      <div class="sh">
-        <span class="sh-t">Event Log</span>
-        <span class="sh-t" id="logCount">0 events</span>
-      </div>
-      <div class="log-scroll" id="logList">
-        <div class="lempty">Waiting for events…</div>
-      </div>
+      <div class="sh"><span class="sh-t">Event Log</span><span class="sh-t" id="logCount">0 events</span></div>
+      <div class="log-scroll" id="logList"><div class="lempty">Waiting for events…</div></div>
     </div>
 
   </div>
@@ -327,403 +387,622 @@ main{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 52px);over
 <div id="alertPopup">
   <div class="ap-lv" id="apLv">ALERT</div>
   <div class="ap-msg" id="apMsg">—</div>
-  <button class="ap-close" onclick="closePopup()">✓ Acknowledge</button>
-</div>
-
-<!-- Assign Modal -->
-<div id="assignModal">
-  <div class="amodal">
-    <div class="amodal-title" id="amTitle">Assign Track</div>
-    <div class="amodal-sub" id="amSub">Choose role for this person</div>
-    <div class="amodal-btns">
-      <button class="amodal-btn amodal-patient" id="amPatient" onclick="confirmAssign('patient')">🛏 Patient (T1)</button>
-      <button class="amodal-btn amodal-nurse"   id="amNurse"   onclick="confirmAssign('nurse')">👩‍⚕️ Nurse (T2)</button>
-      <button class="amodal-btn amodal-cancel"  onclick="closeModal()">Cancel</button>
-    </div>
-  </div>
+  <button class="ap-close" onclick="ackAndClose()">✓ Acknowledge</button>
 </div>
 
 <div id="toast"></div>
 
 <script>
-const NATIVE_W=1280, NATIVE_H=400;
-const COLORS=[
-  {name:'green',hex:'#00e5a0'},{name:'blue',hex:'#38bdf8'},
-  {name:'orange',hex:'#fb923c'},{name:'purple',hex:'#c084fc'},
-  {name:'yellow',hex:'#fbbf24'},{name:'red',hex:'#f87171'},
-];
-const ZONE_HEX={green:'#00e5a0',blue:'#38bdf8',orange:'#fb923c',
+// ── Constants ──────────────────────────────────────────────────────
+const NATIVE_W = 1280, NATIVE_H = 400;
+const ZONE_HEX = {green:'#00c97a',blue:'#38bdf8',orange:'#fb923c',
   purple:'#c084fc',yellow:'#fbbf24',red:'#f87171'};
+const STATE_CLASS = {
+  'ON BED':'s-on-bed','AT EDGE':'s-at-edge',
+  'GETTING OUT':'s-getting-out','OFF BED':'s-off-bed',
+};
+const STATE_ICON = {'ON BED':'🛏️','AT EDGE':'⚠️','GETTING OUT':'🚨','OFF BED':'🚨'};
 
-let selectedColor=COLORS[0], zonesData=[], tracksData=[];
-let points=[], nativePoints=[], hoverPt=null, closed=false, editingId=null;
-let currentMode='draw', pendingTrackId=null, popupShown=false;
+// ── State ──────────────────────────────────────────────────────────
+let drawTarget    = null;   // null | 'bed' | 'edge'
+let drawPoints    = [];     // native video coords
+let drawClosed    = false;
+let drawHover     = null;   // canvas coords for cursor preview
+let editingZoneId = null;   // zone being edited (null = new)
+let zonesData     = [];
+let popupShown = false, lastState = '', lastLevel = -1;
+let durBaseMs = 0, durPollAt = 0;
+let audioCtx = null;
 
-// ── Color picker ──────────────────────────────────────────────────
-document.getElementById('colorPicker').innerHTML='';
-COLORS.forEach((c,i)=>{
-  const sw=document.createElement('div');
-  sw.className='csw'+(i===0?' active':'');
-  sw.style.background=c.hex;
-  sw.onclick=()=>{
-    selectedColor=c;
-    document.querySelectorAll('.csw').forEach(s=>s.classList.remove('active'));
-    sw.classList.add('active');
-  };
-  document.getElementById('colorPicker').appendChild(sw);
-});
+// ── Canvas ─────────────────────────────────────────────────────────
+const canvas = document.getElementById('roiCanvas');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('videoWrap');
+const img    = document.getElementById('videoFeed');
 
-// ── Mode switching ────────────────────────────────────────────────
-const canvas      = document.getElementById('roiCanvas');
-const ctx         = canvas.getContext('2d');
-const assignOvl   = document.getElementById('assignOverlay');
-const modeInfo    = document.getElementById('modeInfo');
-const btnDraw     = document.getElementById('btnDraw');
-const btnAssign   = document.getElementById('btnAssign');
-
-function setMode(mode){
-  currentMode=mode;
-  canvas.style.pointerEvents='auto';
-  if(assignOvl) assignOvl.style.display='none';
-  btnDraw.className='btn btn-p';
-  modeInfo.className='modeinfo draw';
-  modeInfo.textContent='✏️ Draw mode — click corners on video to map bed zone';
-}
-setMode('draw');
-
-// ── Canvas sync ───────────────────────────────────────────────────
-const wrap=document.getElementById('videoWrap');
-const img =document.getElementById('videoFeed');
-
-function syncCanvas(){
-  canvas.width =img.offsetWidth ||wrap.offsetWidth;
-  canvas.height=img.offsetHeight||wrap.offsetHeight;
+function syncCanvas() {
+  canvas.width  = img.offsetWidth  || wrap.offsetWidth;
+  canvas.height = img.offsetHeight || wrap.offsetHeight;
   redraw();
 }
 new ResizeObserver(syncCanvas).observe(wrap);
-img.onload=syncCanvas;
+img.onload = syncCanvas;
 
-function toNative(p){
-  const r=canvas.getBoundingClientRect();
-  return{x:Math.round(p.x/r.width*NATIVE_W),y:Math.round(p.y/r.height*NATIVE_H)};
-}
-function getPos(e){
-  const r=canvas.getBoundingClientRect();
-  return{x:e.clientX-r.left,y:e.clientY-r.top};
+function canvasToVideo(cx, cy) {
+  const el = document.getElementById('videoFeed');
+  const rect = el.getBoundingClientRect();
+  const natW = el.naturalWidth  || NATIVE_W;
+  const natH = el.naturalHeight || NATIVE_H;
+  const elAspect  = rect.width / rect.height;
+  const vidAspect = natW / natH;
+  let rendW, rendH, offX, offY;
+  if (elAspect > vidAspect) {
+    rendH = rect.height; rendW = rendH * vidAspect;
+    offX  = (rect.width - rendW) / 2; offY = 0;
+  } else {
+    rendW = rect.width; rendH = rendW / vidAspect;
+    offX  = 0; offY  = (rect.height - rendH) / 2;
+  }
+  const scaleX = natW / rendW;
+  const scaleY = natH / rendH;
+  const vx = Math.round((cx - rect.left - offX) * scaleX);
+  const vy = Math.round((cy - rect.top  - offY) * scaleY);
+  return { x: Math.max(0, Math.min(natW, vx)), y: Math.max(0, Math.min(natH, vy)) };
 }
 
-function redraw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(!points.length) return;
-  const col=selectedColor.hex;
-  const allPts=closed?points:(hoverPt?[...points,hoverPt]:points);
-  if(closed&&points.length>=3){
+function videoToCanvas(p) {
+  const el = document.getElementById('videoFeed');
+  const rect = el.getBoundingClientRect();
+  const natW = el.naturalWidth  || NATIVE_W;
+  const natH = el.naturalHeight || NATIVE_H;
+  const elAspect  = rect.width / rect.height;
+  const vidAspect = natW / natH;
+  let rendW, rendH, offX, offY;
+  if (elAspect > vidAspect) {
+    rendH = rect.height; rendW = rendH * vidAspect;
+    offX  = (rect.width - rendW) / 2; offY = 0;
+  } else {
+    rendW = rect.width; rendH = rendW / vidAspect;
+    offX  = 0; offY  = (rect.height - rendH) / 2;
+  }
+  const scaleX = natW / rendW;
+  const scaleY = natH / rendH;
+  return { x: p.x / scaleX + offX, y: p.y / scaleY + offY };
+}
+
+// ── Draw mode ──────────────────────────────────────────────────────
+function redraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!drawTarget || !drawPoints.length) return;
+
+  const col  = drawTarget === 'edge' ? '#f59e0b' : '#00c97a';
+  const cpts = drawPoints.map(videoToCanvas);
+  const last = drawHover && !drawClosed ? [...cpts, drawHover] : cpts;
+
+  if (last.length >= 3) {
     ctx.beginPath();
-    points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-    ctx.closePath(); ctx.fillStyle=col+'18'; ctx.fill();
+    last.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.closePath();
+    ctx.fillStyle = col + (drawClosed ? '22' : '0e');
+    ctx.fill();
   }
+
   ctx.beginPath();
-  allPts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-  if(closed) ctx.closePath();
-  ctx.strokeStyle=col; ctx.lineWidth=1.5;
-  ctx.setLineDash(closed?[]:[5,4]);
-  ctx.shadowColor=col; ctx.shadowBlur=closed?10:4;
-  ctx.stroke(); ctx.setLineDash([]); ctx.shadowBlur=0;
-  points.forEach((p,i)=>{
-    ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2);
-    ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=8;
-    ctx.fill(); ctx.shadowBlur=0;
-    ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
-    ctx.fillStyle='#000'; ctx.font='bold 8px DM Mono,monospace';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(i+1,p.x,p.y);
+  last.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  if (drawClosed) ctx.closePath();
+  ctx.strokeStyle = col;
+  ctx.lineWidth   = drawClosed ? 2 : 1.5;
+  ctx.setLineDash(drawClosed ? [] : [5, 4]);
+  ctx.shadowColor = col;
+  ctx.shadowBlur  = drawClosed ? 10 : 4;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+
+  cpts.forEach((p, i) => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, i === 0 ? 7 : 5, 0, Math.PI * 2);
+    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = i === 0 ? 14 : 8;
+    ctx.fill(); ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 8px IBM Plex Mono,monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(i + 1, p.x, p.y);
+  });
+
+  if (!drawClosed && cpts.length >= 4 && drawHover) {
+    const d = Math.hypot(drawHover.x - cpts[0].x, drawHover.y - cpts[0].y);
+    if (d < 22) {
+      ctx.beginPath(); ctx.arc(cpts[0].x, cpts[0].y, 13, 0, Math.PI * 2);
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+}
+
+function updateDrawHint() {
+  const hint = document.getElementById('drawHintText');
+  const save = document.getElementById('saveDrawBtn');
+  const label = drawTarget === 'edge' ? 'EDGE' : 'BED';
+  if (!drawPoints.length) {
+    hint.textContent = `Draw ${label} zone — click to place corners`;
+    save.disabled = true;
+  } else if (drawPoints.length < 4) {
+    hint.textContent = `${drawPoints.length} pt${drawPoints.length > 1 ? 's' : ''} — need 4 minimum`;
+    save.disabled = true;
+  } else if (!drawClosed) {
+    hint.textContent = `${drawPoints.length} pts — click first point to close`;
+    save.disabled = true;
+  } else {
+    hint.textContent = `${label} zone closed — click Save`;
+    save.disabled = false;
+  }
+}
+
+function startDraw(target, preloadPoints) {
+  drawTarget = target;
+  drawPoints = preloadPoints ? preloadPoints.map(p => ({...p})) : [];
+  drawClosed = !!(preloadPoints && preloadPoints.length >= 4);
+  drawHover  = null;
+  document.getElementById('drawButtons').style.display  = 'none';
+  document.getElementById('drawControls').style.display = 'flex';
+  canvas.style.cursor = 'crosshair';
+  updateDrawHint();
+  redraw();
+}
+
+function cancelDraw() {
+  drawTarget = null; drawPoints = []; drawClosed = false; drawHover = null;
+  editingZoneId = null;
+  document.getElementById('drawControls').style.display = 'none';
+  document.getElementById('drawButtons').style.display  = 'flex';
+  canvas.style.cursor = 'default';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function undoDraw() {
+  if (drawClosed) { drawClosed = false; }
+  else if (drawPoints.length) { drawPoints.pop(); }
+  drawHover = null;
+  updateDrawHint(); redraw();
+}
+
+function saveDrawing() {
+  if (!drawClosed || drawPoints.length < 4) return;
+  const poly  = drawPoints.map(p => ({x: p.x, y: p.y}));
+  const label = document.getElementById('zoneName').value.trim() || 'Bed 1';
+  const autoAdvanceToEdge = !editingZoneId && drawTarget === 'bed';
+  let zones;
+  if (editingZoneId) {
+    zones = zonesData.map(z => {
+      if (z.id !== editingZoneId) return z;
+      if (drawTarget === 'bed') return { ...z, polygon: poly };
+      return { ...z, edge_polygon: poly, edge_manual: true };
+    });
+  } else if (drawTarget === 'bed') {
+    const id = 'zone_' + Date.now();
+    zones = [...zonesData, { id, label, color: 'green', type: 'bed', polygon: poly }];
+  } else {
+    const last = zonesData[zonesData.length - 1];
+    if (!last) { showToast('Draw a Bed Zone first', 'error'); return; }
+    zones = zonesData.map(z => z.id === last.id
+      ? { ...z, edge_polygon: poly, edge_manual: true } : z);
+  }
+  console.log('[saveDrawing] Sending zones:', JSON.stringify(zones, null, 2));
+  fetch('/api/zones', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ zones }) })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) { showToast('Error: ' + (d.error || 'unknown'), 'error'); return; }
+    if (autoAdvanceToEdge) {
+      // Auto-start edge draw — nurse draws it next without extra clicks
+      drawTarget = 'edge'; drawPoints = []; drawClosed = false; drawHover = null;
+      editingZoneId = null;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('saveDrawBtn').disabled = true;
+      document.getElementById('drawHintText').textContent =
+        'Bed zone saved. Now draw the EDGE zone (danger area around the bed)';
+      redraw();
+    } else {
+      showToast('Zone saved', 'success');
+      cancelDraw();
+    }
   });
 }
 
-canvas.addEventListener('mousemove',e=>{
-  if(closed||!points.length) return;
-  hoverPt=getPos(e); redraw();
-});
-canvas.addEventListener('mouseleave',()=>{hoverPt=null; redraw();});
-canvas.addEventListener('click',e=>{
-  if(closed) return;
-  const p=getPos(e);
-  if(points.length>=3&&Math.hypot(p.x-points[0].x,p.y-points[0].y)<16){
-    closed=true; hoverPt=null; redraw(); updateToolbar(); return;
-  }
-  points.push(p); nativePoints.push(toNative(p));
-  updateToolbar(); redraw();
-});
+function editZone(zoneId, target) {
+  const zone = zonesData.find(z => z.id === zoneId);
+  if (!zone) { showToast('Zone not found', 'error'); return; }
+  const poly = target === 'edge' ? (zone.edge_polygon || []) : (zone.polygon || []);
+  editingZoneId = zoneId;
+  startDraw(target, poly.length >= 3 ? poly : undefined);
+}
 
-// ── Assign overlay click ──────────────────────────────────────────
-if(assignOvl) assignOvl.addEventListener('click',e=>{
-  const r=assignOvl.getBoundingClientRect();
-  const nx=Math.round((e.clientX-r.left)/r.width*NATIVE_W);
-  const ny=Math.round((e.clientY-r.top)/r.height*NATIVE_H);
-  let clicked=null;
-  for(const t of tracksData){
-    if(!t.bbox) continue;
-    const [x1,y1,x2,y2]=t.bbox;
-    if(nx>=x1&&nx<=x2&&ny>=y1&&ny<=y2){ clicked=t.track_id; break; }
-  }
-  if(clicked===null){ showToast('Click on a person bounding box','error'); return; }
-  pendingTrackId=clicked;
-  document.getElementById('amTitle').textContent=`Track #${clicked}`;
-  document.getElementById('amSub').textContent='Assign role for this person:';
-  document.getElementById('assignModal').classList.add('show');
+canvas.addEventListener('mousemove', e => {
+  if (!drawTarget || drawClosed) return;
+  const r = canvas.getBoundingClientRect();
+  drawHover = { x: e.clientX - r.left, y: e.clientY - r.top };
+  redraw();
 });
 
-function confirmAssign(role){
-  if(pendingTrackId===null) return;
-  assignRole(pendingTrackId, role);
-  closeModal();
-}
+canvas.addEventListener('mouseleave', () => {
+  drawHover = null;
+  if (drawTarget) redraw();
+});
 
-function closeModal(){
-  document.getElementById('assignModal').classList.remove('show');
-  pendingTrackId=null;
-}
-
-function assignRole(trackId, role){
-  fetch('/api/assign',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({track_id:trackId,role})})
-  .then(r=>r.json())
-  .then(d=>{
-    if(d.ok) showToast(`✓ Track #${trackId} → ${role.toUpperCase()}`,'success');
-    else     showToast('✗ Assign failed','error');
-  });
-}
-
-function clearRole(trackId){
-  fetch('/api/assign',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({track_id:trackId,role:'clear'})})
-  .then(r=>r.json()).then(d=>d.ok&&showToast('Role cleared',''));
-}
-
-// ── Toolbar ───────────────────────────────────────────────────────
-const zoneNameEl=document.getElementById('zoneName');
-const ptBadge   =document.getElementById('ptBadge');
-const roiHint   =document.getElementById('roiHint');
-const saveBtn   =document.getElementById('saveBtn');
-// Elements ready
-
-function updateToolbar(){
-  ptBadge.textContent=points.length+' pts';
-  saveBtn.disabled=!(closed&&points.length>=3);
-  if(closed)               roiHint.textContent='✓ Zone closed — click Save Zone';
-  else if(!points.length)  roiHint.textContent='Click corners to draw bed zone';
-  else if(points.length<3) roiHint.textContent=points.length+' pts placed';
-  else                     roiHint.textContent=points.length+' pts — click pt 1 to close';
-}
-
-document.getElementById('undoBtn').onclick=()=>{
-  if(closed) closed=false; else{points.pop();nativePoints.pop();}
-  hoverPt=null; updateToolbar(); redraw();
-};
-document.getElementById('clearBtn').onclick=()=>{
-  points=[]; nativePoints=[]; closed=false; hoverPt=null; editingId=null;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  updateToolbar(); saveBtn.textContent='Save Zone';
-};
-
-saveBtn.onclick=()=>{
-  const polygon=[...nativePoints].map(p=>({x:p.x,y:p.y}));
-  const label=zoneNameEl.value.trim()||'Bed 1';
-  const color=selectedColor.name;
-  const id=editingId||('zone_'+Date.now());
-  const type='bed';
-
-  points=[]; nativePoints=[]; closed=false; hoverPt=null;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  updateToolbar();
-
-  let uz=zonesData.map(z=>({id:z.id,label:z.label,color:z.color,
-    polygon:z.polygon,type:z.type||'bed'}));
-  if(editingId) uz=uz.map(z=>z.id===editingId?{id,label,color,polygon,type}:z);
-  else uz.push({id,label,color,polygon,type});
-  editingId=null; saveBtn.textContent='Save Zone';
-
-  fetch('/api/zones',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({zones:uz})})
-  .then(r=>r.json())
-  .then(d=>d.ok
-    ?showToast('✓ Zone saved — edge & near zones auto-generated','success')
-    :showToast('✗ '+d.error,'error'));
-};
-
-// ── Render zones sidebar ──────────────────────────────────────────
-function renderZones(zones){
-  const el=document.getElementById('zoneList');
-  document.getElementById('zoneCount').textContent=zones.length+' zone'+(zones.length!==1?'s':'');
-  if(!zones.length){
-    el.innerHTML='<div class="pempty">No zones. Use ✏️ Draw Zone.</div>'; return;
+canvas.addEventListener('click', e => {
+  if (!drawTarget || drawClosed) return;
+  const r  = canvas.getBoundingClientRect();
+  const cx = e.clientX - r.left, cy = e.clientY - r.top;
+  if (drawPoints.length >= 4) {
+    const first = videoToCanvas(drawPoints[0]);
+    if (Math.hypot(cx - first.x, cy - first.y) < 20) {
+      drawClosed = true; drawHover = null;
+      updateDrawHint(); redraw(); return;
+    }
   }
-  el.innerHTML=zones.map(z=>{
-    const hex=ZONE_HEX[z.color]||'#00e5a0';
-    return`<div class="zone-row">
-      <div class="zdot" style="background:${hex};box-shadow:0 0 5px ${hex}50"></div>
+  drawPoints.push(canvasToVideo(e.clientX, e.clientY));
+  updateDrawHint(); redraw();
+});
+
+document.getElementById('undoDrawBtn').onclick  = undoDraw;
+document.getElementById('cancelDrawBtn').onclick = cancelDraw;
+document.getElementById('saveDrawBtn').onclick   = saveDrawing;
+
+// ── Zone sidebar ───────────────────────────────────────────────────
+function renderZones(zones) {
+  const el = document.getElementById('zoneList');
+  document.getElementById('zoneCount').textContent = zones.length + (zones.length === 1 ? ' zone' : ' zones');
+  if (!zones.length) { el.innerHTML = '<div class="pempty">No zones · draw a bed zone to begin</div>'; return; }
+  el.innerHTML = zones.map(z => {
+    const hex = ZONE_HEX[z.color] || '#00c97a';
+    return `<div class="zone-row">
+      <div class="zdot" style="background:${hex};box-shadow:0 0 5px ${hex}60"></div>
       <span class="zname">${z.label}</span>
-      <span class="ztag">${z.type||'bed'} · edge+near auto</span>
-      <button class="zdel" onclick="deleteZone('${z.id}')">✕</button>
+      <span class="ztag">${z.type || 'bed'}</span>
+      <button class="zedit"      onclick="editZone('${z.id}','bed')"  title="Edit bed polygon">Edit Bed</button>
+      <button class="zedit edge" onclick="editZone('${z.id}','edge')" title="Edit edge polygon">Edit Edge</button>
+      <button class="zdel"       onclick="deleteZone('${z.id}')">✕</button>
     </div>`;
   }).join('');
 }
 
-function deleteZone(id){
-  if(!confirm('Delete this zone?')) return;
-  fetch('/api/zones/'+id,{method:'DELETE'})
-  .then(r=>r.json()).then(d=>d.ok&&showToast('Zone deleted','success'));
+function deleteZone(id) {
+  if (!confirm('Delete this zone?')) return;
+  fetch('/api/zones/' + id, { method:'DELETE' })
+    .then(r => r.json())
+    .then(d => d.ok && showToast('Zone deleted', 'success'));
 }
 
-// ── Render persons ────────────────────────────────────────────────
-function renderPersons(tracks){
-  const el=document.getElementById('personList');
-  document.getElementById('personCount').textContent=tracks.length;
-  if(!tracks.length){
-    el.innerHTML='<div class="pempty">No persons detected</div>'; return;
-  }
-  el.innerHTML=tracks.map(t=>{
-    const rc=t.role||'unassigned';
-    const rl=t.role?t.role.toUpperCase():'UNASSIGNED';
-    const s=t.state||'';
-    const sc=s.includes('ON BED')?'on'
-            :s.includes('EDGE')||s.includes('SITTING')?'warn'
-            :s.includes('OUT')||s.includes('OFF')?'alert':'';
-    const isPatient = t.role==='patient';
-    return`<div class="pcard">
-      <div class="pcard-top">
-        <span class="prole ${rc}">${rl}</span>
-        <span class="pid">Track #${t.track_id} · ${round(t.time_in_state||0)}s</span>
-      </div>
-      <div class="pstate ${sc}">${t.state}</div>
-      ${!isPatient?`<div class="pbtns">
-        <button class="pbtn pbtn-patient" onclick="assignRole(${t.track_id},'patient')">Set as Patient</button>
-      </div>`:''}
-    </div>`;
-  }).join('');
-  function round(n){return Math.round(n);}
-}
-
-// ── Render log ────────────────────────────────────────────────────
-function renderLog(log){
-  document.getElementById('logCount').textContent=log.length+' events';
-  const el=document.getElementById('logList');
-  if(!log.length){el.innerHTML='<div class="lempty">Waiting for events…</div>'; return;}
-  el.innerHTML=log.map(e=>`
+// ── Event log ──────────────────────────────────────────────────────
+function renderLog(log) {
+  document.getElementById('logCount').textContent = log.length + ' events';
+  const el = document.getElementById('logList');
+  if (!log.length) { el.innerHTML = '<div class="lempty">Waiting for events…</div>'; return; }
+  el.innerHTML = log.map(e => `
     <div class="lrow">
       <div class="lpip ${(e.level_name||'none').toLowerCase()}"></div>
       <div class="linfo">
-        <div class="lzone">${e.zone||''} ${e.role?'· '+e.role:''}</div>
-        <div class="lmsg">${e.message||e.new_state||''}</div>
+        <div class="lmsg">${e.prev_state ? e.prev_state + ' → ' + e.new_state : (e.message || e.new_state || '')}</div>
         <div class="lts">${e.time}</div>
       </div>
     </div>`).join('');
 }
 
-// ── Alert popup ───────────────────────────────────────────────────
-function triggerAlert(level, msg){
-  if(level<2) return;
-  const p=document.getElementById('alertPopup');
-  document.getElementById('apLv').textContent=
-    level>=4?'🚨 CRITICAL':level>=3?'🚨 ALERT':'⚠️ WARNING';
-  document.getElementById('apMsg').textContent=msg;
-  p.className=level>=3?'show':'show warning';
-  popupShown=true;
-  try{
-    const ac=new AudioContext();
-    const osc=ac.createOscillator(), g=ac.createGain();
-    osc.connect(g); g.connect(ac.destination);
-    osc.frequency.value=level>=4?880:660;
-    g.gain.setValueAtTime(0.3,ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.6);
-    osc.start(); osc.stop(ac.currentTime+0.6);
-  }catch(e){}
+// ── Debug panel ────────────────────────────────────────────────────
+function boolHtml(v) {
+  if (v === undefined || v === null) return '<span class="dbval">—</span>';
+  return v ? '<span class="dbval t">✓</span>' : '<span class="dbval f">✗</span>';
 }
 
-function closePopup(){
+function renderDebug(data) {
+  const dbg = data.debug || {};
+  const ar  = dbg.ar !== undefined ? dbg.ar.toFixed(2) : '—';
+  const mot = data.motion_score !== undefined ? Math.round(data.motion_score / 1000) + 'k' : '—';
+  document.getElementById('debugSummary').textContent = `AR:${ar}  MOT:${mot}`;
+
+  const arEl = document.getElementById('dbAr');
+  arEl.textContent = ar;
+  arEl.className   = 'dbval' + (dbg.lying_flat ? ' flat' : '');
+
+  document.getElementById('dbFlat').innerHTML   = boolHtml(dbg.lying_flat);
+  document.getElementById('dbMot').textContent  = mot;
+  document.getElementById('dbCand').textContent = dbg.candidate || '—';
+
+  document.getElementById('dbGraceEl').textContent =
+    dbg.grace_elapsed !== undefined ? dbg.grace_elapsed.toFixed(1) + 's' : '—';
+  document.getElementById('dbGraceNd').textContent =
+    dbg.grace_needed  !== undefined ? dbg.grace_needed + 's' : '—';
+
+  document.getElementById('dbTorsoBed').innerHTML  = boolHtml(dbg.torso_in_bed);
+  document.getElementById('dbHeadBed').innerHTML   = boolHtml(dbg.head_in_bed);
+  document.getElementById('dbTorsoEdge').innerHTML = boolHtml(dbg.torso_in_edge);
+  document.getElementById('dbHeadEdge').innerHTML  = boolHtml(dbg.head_in_edge);
+  document.getElementById('dbTorsoNear').innerHTML = boolHtml(dbg.torso_in_near);
+  document.getElementById('dbHeadNear').innerHTML  = boolHtml(dbg.head_in_near);
+}
+
+// ── State badge ────────────────────────────────────────────────────
+function updateBadge(pstate, level, lastTs) {
+  const badge = document.getElementById('stateBadge');
+  badge.className = 'state-badge ' + (STATE_CLASS[pstate] || 's-on-bed');
+  document.getElementById('badgeIcon').textContent  = STATE_ICON[pstate]  || '🛏️';
+  document.getElementById('badgeState').textContent = pstate;
+  if (lastTs) document.getElementById('badgeTs').textContent = lastTs;
+  const dot = document.getElementById('liveDot');
+  dot.className = 'live-dot' + (level >= 3 ? ' alert' : level >= 2 ? ' warn' : '');
+}
+
+// ── Duration counter (smooth 200 ms tick) ─────────────────────────
+function fmtDur(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return h + 'h ' + (m % 60) + 'm';
+  if (m > 0) return m + 'm ' + (s % 60) + 's';
+  return s + 's';
+}
+setInterval(() => {
+  if (!durPollAt) return;
+  document.getElementById('badgeDur').textContent =
+    fmtDur(durBaseMs + (Date.now() - durPollAt));
+}, 200);
+
+// ── Web Audio ──────────────────────────────────────────────────────
+function playBeep(level) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ac = audioCtx;
+    const tone = (freq, t0, dur) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.22, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.start(t0); o.stop(t0 + dur);
+    };
+    if (level >= 4) {
+      // OFF BED — siren pattern ×3
+      [0, 0.38, 0.76].forEach(t => {
+        tone(900, ac.currentTime + t,        0.22);
+        tone(650, ac.currentTime + t + 0.22, 0.22);
+      });
+    } else if (level === 3) {
+      // GETTING OUT — triple pulse
+      [0, 0.27, 0.54].forEach(t => tone(780, ac.currentTime + t, 0.2));
+    } else {
+      // AT EDGE — single beep
+      tone(660, ac.currentTime, 0.5);
+    }
+  } catch (e) {}
+}
+
+// ── Alert popup ────────────────────────────────────────────────────
+function triggerAlert(level, msg) {
+  if (level < 2) return;
+  const p = document.getElementById('alertPopup');
+  document.getElementById('apLv').textContent  =
+    level >= 4 ? '🚨 CRITICAL' : level >= 3 ? '🚨 ALERT' : '⚠️ WARNING';
+  document.getElementById('apMsg').textContent = msg;
+  p.className = level >= 3 ? 'show' : 'show warn';
+  popupShown = true;
+  playBeep(level);
+}
+function ackAndClose() {
+  fetch('/api/acknowledge', { method:'POST' });
   document.getElementById('alertPopup').classList.remove('show');
-  popupShown=false;
+  popupShown = false;
+  showToast('Alert acknowledged', 'success');
+}
+function acknowledge() {
+  fetch('/api/acknowledge', { method:'POST' });
+  showToast('Alert acknowledged', 'success');
 }
 
-function acknowledge(){
-  fetch('/api/acknowledge',{method:'POST'});
-  closePopup();
-  showToast('Alert acknowledged','success');
+// ── Toast ──────────────────────────────────────────────────────────
+const toastEl = document.getElementById('toast');
+function showToast(msg, type = '') {
+  toastEl.textContent = msg; toastEl.className = 'show ' + type;
+  setTimeout(() => { toastEl.className = ''; }, 3000);
 }
 
-// ── Toast ─────────────────────────────────────────────────────────
-const toast=document.getElementById('toast');
-function showToast(msg,type=''){
-  toast.textContent=msg; toast.className='show '+type;
-  setTimeout(()=>toast.className='',3000);
-}
+// ── Poll ───────────────────────────────────────────────────────────
+async function poll() {
+  try {
+    const d = await fetch('/api/status').then(r => r.json());
 
-// ── Poll ──────────────────────────────────────────────────────────
-const banner    =document.getElementById('banner');
-const bIcon     =document.getElementById('bIcon');
-const bLabel    =document.getElementById('bLabel');
-const bSub      =document.getElementById('bSub');
-const bTime     =document.getElementById('bTime');
-const liveDot   =document.getElementById('liveDot');
-const camChip   =document.getElementById('camChip');
-const BICONS    ={0:'🛏️',1:'💤',2:'⚠️',3:'🚨',4:'🚨'};
-const BCLASSES  ={0:'safe',1:'info',2:'warning',3:'alert',4:'critical'};
-let lastPstate='',lastLevel=-1;
+    document.getElementById('fpsVal').textContent = d.fps || '—';
+    const ok = d.cam_status === 'OK';
+    const camChip = document.getElementById('camChip');
+    camChip.textContent = 'CAM ' + d.cam_status;
+    camChip.style.color = ok ? 'var(--on-bed)' : 'var(--getting-out)';
 
-async function poll(){
-  try{
-    const d=await fetch('/api/status').then(r=>r.json());
-
-    document.getElementById('fpsVal').textContent=d.fps||'—';
-    document.getElementById('stFps').textContent =d.fps||'—';
-
-    const ok=d.cam_status==='OK';
-    camChip.textContent='CAM '+d.cam_status;
-    camChip.style.color=ok?'var(--off)':'var(--on)';
-
-    zonesData =d.zones||[];
-    tracksData=d.tracks||[];
-
+    zonesData = d.zones || [];
     renderZones(zonesData);
 
-    const pstate =d.patient_state||'UNKNOWN';
-    const level  =d.alert_level||0;
-    const nurse  =d.nurse_nearby;
+    const pstate = d.patient_state || 'UNKNOWN';
+    const level  = d.alert_level   || 0;
 
-    document.getElementById('stPatient').textContent=pstate;
-    document.getElementById('stPatient').className='sc-val '+(level>=3?'on':level>=2?'warn':'off');
-    document.getElementById('stAlert').textContent =d.alert_name||'NONE';
-    document.getElementById('stAlert').className  ='sc-val '+(level>=3?'on':level>=2?'warn':'');
-    document.getElementById('stNurse').textContent =nurse?'NEARBY':'—';
-    document.getElementById('stNurse').className  ='sc-val '+(nurse?'warn':'');
+    // Sync duration baseline
+    durBaseMs = (d.state_duration_s || 0) * 1000;
+    durPollAt = Date.now();
 
-    if(pstate!==lastPstate||level!==lastLevel){
-      lastPstate=pstate; lastLevel=level;
-      bIcon.textContent =BICONS[level]||'🛏️';
-      bLabel.textContent=pstate;
-      bSub.textContent  =nurse&&level>=2?'⚠️ Nurse nearby':'Bed Occupancy · KuboCare';
-      banner.className  ='banner '+(BCLASSES[level]||'safe');
-      liveDot.className ='dot'+(level>=3?' alert':level>=2?' warn':'');
-      if(level>=3&&!popupShown) triggerAlert(level,pstate+(nurse?' — Nurse nearby':''));
-      if(level<2) popupShown=false;
+    if (pstate !== lastState || level !== lastLevel) {
+      if (testRunning && pstate !== lastState) recordTestStateChange(pstate);
+      lastState = pstate; lastLevel = level;
+      const lastTs = d.log && d.log[0] ? d.log[0].time : '';
+      updateBadge(pstate, level, lastTs);
+      if (level >= 2 && !popupShown) triggerAlert(level, pstate);
+      if (level < 2) popupShown = false;
     }
 
-    if(d.log&&d.log.length){
-      bTime.textContent=d.log[0].time;
-      renderLog(d.log);
-    }
+    renderDebug(d);
+    if (d.log) renderLog(d.log);
 
-  }catch(e){ document.getElementById('fpsVal').textContent='ERR'; }
+  } catch (e) {
+    document.getElementById('fpsVal').textContent = 'ERR';
+  }
 }
 
-setInterval(poll,1000); poll();
-window.addEventListener('load',()=>{
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  points=[]; nativePoints=[]; closed=false; hoverPt=null;
+setInterval(poll, 1000);
+poll();
+
+// ── Zone Settings sliders ──────────────────────────────────────────
+let zoneSettingsTimer = null;
+const nearSlider = document.getElementById('nearSlider');
+
+function postZoneSettings() {
+  fetch('/api/zone-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ near_offset: +nearSlider.value })
+  })
+  .then(r => r.json())
+  .then(d => d.ok && showToast('Near zone offset updated', 'success'));
+}
+
+nearSlider.addEventListener('input', () => {
+  document.getElementById('nearVal').textContent = nearSlider.value;
+  clearTimeout(zoneSettingsTimer);
+  zoneSettingsTimer = setTimeout(postZoneSettings, 400);
 });
+
+// ── Test Mode ──────────────────────────────────────────────────────
+let testRunning    = false;
+let testStartTime  = 0;
+let testSnapshots  = [];
+let testStateLog   = [];   // [{state, timeMs, dur}]
+let testLastState  = null;
+let testLastTs     = 0;
+let testPollTimer  = null;
+
+function toggleTest() {
+  testRunning ? stopTest() : startTest();
+}
+
+let testElapsedTimer = null;
+
+async function startTest() {
+  await fetch('/api/test-mode', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ active: true }) });
+  testRunning   = true;
+  testStartTime = Date.now();
+  testSnapshots = [];
+  testStateLog  = [{ state: lastState, timeMs: Date.now(), dur: -1 }];
+  testLastState = lastState;
+  testLastTs    = Date.now();
+  document.getElementById('testReport').style.display = 'none';
+  document.getElementById('testStatus').style.display = 'block';
+  document.getElementById('testElapsed').textContent  = '0s';
+  const btn = document.getElementById('testBtn');
+  btn.textContent = '■ Stop Test';
+  btn.className   = 'btn btn-test-run';
+  showToast('Test started', 'success');
+  testPollTimer    = setInterval(fetchTestSnapshots, 2000);
+  testElapsedTimer = setInterval(() => {
+    document.getElementById('testElapsed').textContent =
+      Math.round((Date.now() - testStartTime) / 1000) + 's';
+  }, 1000);
+}
+
+async function fetchTestSnapshots() {
+  const d = await fetch('/api/test-log').then(r => r.json()).catch(() => ({log:[]}));
+  testSnapshots = d.log || [];
+}
+
+async function stopTest() {
+  clearInterval(testPollTimer);
+  clearInterval(testElapsedTimer);
+  await fetch('/api/test-mode', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ active: false }) });
+  testRunning = false;
+  document.getElementById('testStatus').style.display = 'none';
+  const btn = document.getElementById('testBtn');
+  btn.textContent = '▶ Start Test';
+  btn.className   = 'btn btn-ghost';
+  // Final snapshot fetch then render
+  const d = await fetch('/api/test-log').then(r => r.json()).catch(() => ({log:[]}));
+  testSnapshots = d.log || [];
+  // Finalize last state entry duration
+  if (testStateLog.length > 0)
+    testStateLog[testStateLog.length - 1].dur = Math.round((Date.now() - testLastTs) / 1000);
+  renderTestReport();
+}
+
+function recordTestStateChange(newState) {
+  const now = Date.now();
+  if (testStateLog.length > 0)
+    testStateLog[testStateLog.length - 1].dur = Math.round((now - testLastTs) / 1000);
+  testStateLog.push({ state: newState, timeMs: now, dur: -1 });
+  testLastState = newState;
+  testLastTs    = now;
+}
+
+function buildReportText() {
+  const totalS = Math.round((Date.now() - testStartTime) / 1000);
+  const total  = testSnapshots.length;
+
+  // 1. Timeline
+  const tlLines = testStateLog.map(e => {
+    const t   = new Date(e.timeMs).toTimeString().slice(0, 8);
+    const dur = e.dur >= 0 ? `(lasted ${e.dur}s)` : '(ongoing)';
+    return `  ${t}  ${e.state.padEnd(13)} ${dur}`;
+  });
+
+  // 2. Detection stats
+  const detected   = testSnapshots.filter(s => s.debug && s.debug.candidate).length;
+  const graceSnaps = testSnapshots.filter(s => s.debug && (s.debug.grace_elapsed || 0) > 0);
+  const arVals     = testSnapshots.map(s => s.debug && s.debug.ar).filter(v => v != null);
+  const arMin      = arVals.length ? Math.min(...arVals).toFixed(2) : '—';
+  const arMax      = arVals.length ? Math.max(...arVals).toFixed(2) : '—';
+  const flatCount  = testSnapshots.filter(s => s.debug && s.debug.lying_flat).length;
+
+  // 3. Grace events
+  const graceLines = graceSnaps.map(s =>
+    `  ${s.t}  elapsed=${s.debug.grace_elapsed}s  needed=${s.debug.grace_needed || '?'}s`);
+
+  // 4. Anomalies: state flickers < 3s
+  const flickers = testStateLog.filter(e => e.dur >= 0 && e.dur < 3);
+  const flickerLines = flickers.map(e => {
+    const t = new Date(e.timeMs).toTimeString().slice(0, 8);
+    return `  ${t}  ${e.state} lasted only ${e.dur}s ← flicker`;
+  });
+
+  return [
+    `=== Bed-Sentry Test Report ===`,
+    `Duration: ${totalS}s  |  Snapshots: ${total}  |  State transitions: ${testStateLog.length}`,
+    ``,
+    `── State Timeline ──`,
+    ...(tlLines.length ? tlLines : ['  (no changes recorded)']),
+    ``,
+    `── Detection Stats ──`,
+    `  Person visible:   ${detected} / ${total} snapshots`,
+    `  Person not found: ${total - detected} / ${total} snapshots`,
+    `  AR range:         ${arMin} – ${arMax}`,
+    `  Lying flat:       ${flatCount} snapshots`,
+    ``,
+    `── Grace Timer Events (${graceSnaps.length} snapshots) ──`,
+    ...(graceLines.length ? graceLines : ['  (none)']),
+    ``,
+    `── Anomalies (flickers < 3s) ──`,
+    ...(flickerLines.length ? flickerLines : ['  (none)']),
+  ].join('\n');
+}
+
+function renderTestReport() {
+  const text = buildReportText();
+  window._testReportText = text;
+  document.getElementById('testReportPre').textContent = text;
+  document.getElementById('testReport').style.display = 'flex';
+}
+
+function copyReport() {
+  navigator.clipboard.writeText(window._testReportText || '')
+    .then(() => showToast('Report copied', 'success'))
+    .catch(() => showToast('Copy failed — select text manually', 'error'));
+}
 </script>
 </body>
 </html>

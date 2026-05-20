@@ -4,7 +4,7 @@ app.py — Bed-Sentry v3 Flask Server
 import argparse, threading, time
 from flask import Flask, Response, jsonify, request, render_template
 from detector import DetectorState, run_detector
-from zone_manager import save_zones, validate_zone, ZONE_COLORS
+from zone_manager import save_zones, validate_zone, ZONE_COLORS, update_offsets
 
 app   = Flask(__name__)
 state = DetectorState()
@@ -46,10 +46,32 @@ def api_delete_zone(zone_id):
     state.reload_zones()
     return jsonify({"ok": True})
 
+@app.route('/api/zone-settings', methods=['POST'])
+def api_zone_settings():
+    data = request.get_json(force=True)
+    edge = max(20,  min(150, int(data.get("edge_offset", 50))))
+    near = max(50,  min(300, int(data.get("near_offset", 120))))
+    update_offsets(edge, near)
+    state.reload_zones()
+    return jsonify({"ok": True})
+
 @app.route('/api/acknowledge', methods=['POST'])
 def api_acknowledge():
     state.engine.acknowledge_alert()
     return jsonify({"ok": True})
+
+@app.route('/api/test-mode', methods=['POST'])
+def api_test_mode():
+    data = request.get_json(force=True)
+    active = bool(data.get("active", False))
+    if active:
+        state.test_log.clear()
+    state.test_mode = active
+    return jsonify({"ok": True, "test_mode": state.test_mode})
+
+@app.route('/api/test-log')
+def api_test_log():
+    return jsonify({"log": list(state.test_log)})
 
 @app.route('/')
 def index():
@@ -59,7 +81,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--camera', type=int, default=0)
     parser.add_argument('--model',  type=str, default='yolov8n')
-    parser.add_argument('--skip',   type=int, default=3)
+    parser.add_argument('--skip',   type=int, default=2)
     parser.add_argument('--width',  type=int, default=1280)
     parser.add_argument('--height', type=int, default=400)
     parser.add_argument('--port',   type=int, default=8080)
